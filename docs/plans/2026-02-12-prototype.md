@@ -10,16 +10,25 @@
 
 **Prototype Scope (was NICHT enthalten ist):**
 - Kein ERP-Sync, kein MinIO, kein Traefik, kein Monitoring
-- Kein CO2-Reporting, kein GewAbfV-Modul
-- Kein Dokumenten-Center (kommt in Phase 2)
+- Kein CO2-Reporting
 - Keine Marketing-Website
 - Keine E-Mail-Integration
+- Keine qualifizierte elektronische Signatur (kommt Phase 2)
+- Keine Fotodokumentation / Upload-Mechanismus (kommt Phase 2, GewAbfV-Novelle Juli 2026)
+- Keine eANV-Integration / Begleitscheine (kommt Phase 2)
+- Kein TRGS-519-Nachweis-Upload (kommt Phase 2)
 
 **Was der Prototyp demonstriert:**
 - Kunden-Login + Dashboard mit aktiven Aufträgen
 - Servicekatalog (Behältertypen × Abfallarten als Medusa Products)
+- **AVV-Abfallschlüssel**: Geführte Auswahl statt Freitext, mit Warnhinweisen bei gefährlichen Abfällen
 - Lieferort-Verwaltung (Custom Module)
-- Bestellprozess: Lieferort → Behälter → Abfallart → Termin → Bestätigung
+- **Conditional Checkout Flow**: Bestellprozess mit bedingten Pflichtfeldern je nach Abfallart
+  - Normaler Bauschutt: keine Zusatzfelder
+  - Gemischter Gewerbeabfall: GewAbfV-Erklärung (Begründung Nicht-Trennung)
+  - Gefährliche Abfälle: Erzeugernummer-Pflichtfeld + Vollmacht-Checkbox
+  - Asbest/KMF: Hinweis "TRGS-519 erforderlich" (Upload kommt Phase 2)
+- **Erweitertes Kundenprofil**: Erzeugernummer, Gewerbenachweis-Status
 - Auftragshistorie mit Status-Tracking
 - Admin-Dashboard (Medusa Admin) für Auftragsverwaltung
 
@@ -496,6 +505,231 @@ curl http://localhost:9000/store/delivery-locations -H "Authorization: Bearer <t
 ```bash
 git add backend/src/api/
 git commit -m "feat: add store API routes for delivery locations"
+```
+
+---
+
+## Task 5B: Custom Module — AVV Waste Codes (Abfallschlüssel)
+
+**Files:**
+- Create: `backend/src/modules/waste-code/models/waste-code.ts`
+- Create: `backend/src/modules/waste-code/service.ts`
+- Create: `backend/src/modules/waste-code/index.ts`
+- Create: `backend/src/api/store/waste-codes/route.ts`
+- Create: `backend/src/scripts/seed-waste-codes.ts`
+- Modify: `backend/medusa-config.ts`
+
+**Step 1: Datenmodell**
+
+```typescript
+// backend/src/modules/waste-code/models/waste-code.ts
+import { model } from "@medusajs/framework/utils"
+
+const WasteCode = model.define("waste_code", {
+  id: model.id().primaryKey(),
+  avv_number: model.text(),          // z.B. "17 01 01"
+  title: model.text(),               // z.B. "Beton"
+  category: model.text(),            // z.B. "Bau- und Abbruchabfälle"
+  is_hazardous: model.boolean().default(false),
+  requires_trgs519: model.boolean().default(false),
+  description: model.text().nullable(),
+  warning_text: model.text().nullable(),
+  requires_gewabfv_declaration: model.boolean().default(false),
+  is_active: model.boolean().default(true),
+})
+
+export default WasteCode
+```
+
+**Step 2: Service + Module Definition**
+
+```typescript
+// backend/src/modules/waste-code/service.ts
+import { MedusaService } from "@medusajs/framework/utils"
+import WasteCode from "./models/waste-code"
+
+class WasteCodeService extends MedusaService({ WasteCode }) {}
+export default WasteCodeService
+```
+
+```typescript
+// backend/src/modules/waste-code/index.ts
+import { Module } from "@medusajs/framework/utils"
+import WasteCodeService from "./service"
+
+export const WASTE_CODE_MODULE = "waste-code"
+export default Module(WASTE_CODE_MODULE, { service: WasteCodeService })
+```
+
+**Step 3: API-Route**
+
+```typescript
+// backend/src/api/store/waste-codes/route.ts
+import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { WASTE_CODE_MODULE } from "../../../modules/waste-code"
+
+export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  const wasteCodeService = req.scope.resolve(WASTE_CODE_MODULE)
+  const category = req.query.category as string | undefined
+
+  const filters: any = { is_active: true }
+  if (category) filters.category = category
+
+  const wasteCodes = await wasteCodeService.listWasteCodes(filters)
+  res.json({ waste_codes: wasteCodes })
+}
+```
+
+**Step 4: Seed-Script mit gängigen AVV-Nummern**
+
+```typescript
+// backend/src/scripts/seed-waste-codes.ts
+import { ExecArgs } from "@medusajs/framework/types"
+
+export default async function seedWasteCodes({ container }: ExecArgs) {
+  const wasteCodeService = container.resolve("waste-code")
+
+  const codes = [
+    // Bau- und Abbruchabfälle (Kapitel 17)
+    { avv_number: "17 01 01", title: "Beton", category: "Bau- und Abbruchabfälle", is_hazardous: false, requires_gewabfv_declaration: false, description: "Reiner Beton ohne Verunreinigungen" },
+    { avv_number: "17 01 02", title: "Ziegel", category: "Bau- und Abbruchabfälle", is_hazardous: false, requires_gewabfv_declaration: false, description: "Ziegel und Mauerwerk" },
+    { avv_number: "17 01 07", title: "Gemische aus Beton, Ziegel, Fliesen", category: "Bau- und Abbruchabfälle", is_hazardous: false, requires_gewabfv_declaration: false, description: "Gemischter Bauschutt (sortenrein mineralisch)" },
+    { avv_number: "17 02 01", title: "Holz", category: "Bau- und Abbruchabfälle", is_hazardous: false, requires_gewabfv_declaration: false, description: "Unbehandeltes und behandeltes Holz (A1-A3)" },
+    { avv_number: "17 02 04*", title: "Holz mit gefährlichen Stoffen", category: "Bau- und Abbruchabfälle", is_hazardous: true, requires_gewabfv_declaration: false, warning_text: "Gefährlicher Abfall — Erzeugernummer erforderlich. Entsorgungsnachweis wird benötigt.", description: "Holz A4 (z.B. Bahnschwellen, CKB-behandelt)" },
+    { avv_number: "17 05 04", title: "Boden und Steine", category: "Bau- und Abbruchabfälle", is_hazardous: false, requires_gewabfv_declaration: false, description: "Erdaushub ohne gefährliche Stoffe" },
+    { avv_number: "17 05 03*", title: "Boden mit gefährlichen Stoffen", category: "Bau- und Abbruchabfälle", is_hazardous: true, requires_gewabfv_declaration: false, warning_text: "Gefährlicher Abfall — Erzeugernummer + Analytik erforderlich.", description: "Kontaminierter Erdaushub" },
+    { avv_number: "17 06 01*", title: "Dämmmaterial mit Asbest", category: "Bau- und Abbruchabfälle", is_hazardous: true, requires_trgs519: true, requires_gewabfv_declaration: false, warning_text: "ASBEST — TRGS 519 Sachkundenachweis erforderlich! Nur durch zugelassene Fachfirmen zu entsorgen.", description: "Asbesthaltige Baustoffe" },
+    { avv_number: "17 06 05*", title: "Asbesthaltige Baustoffe", category: "Bau- und Abbruchabfälle", is_hazardous: true, requires_trgs519: true, requires_gewabfv_declaration: false, warning_text: "ASBEST — TRGS 519 Sachkundenachweis erforderlich!", description: "Asbest-Zementplatten, Eternit etc." },
+    { avv_number: "17 06 03*", title: "KMF-Dämmstoffe", category: "Bau- und Abbruchabfälle", is_hazardous: true, requires_trgs519: true, requires_gewabfv_declaration: false, warning_text: "KMF — TRGS 519 Sachkundenachweis erforderlich!", description: "Künstliche Mineralfasern (alte Mineralwolle)" },
+    { avv_number: "17 09 04", title: "Gemischte Bau- und Abbruchabfälle", category: "Bau- und Abbruchabfälle", is_hazardous: false, requires_gewabfv_declaration: true, warning_text: "Gemischter Gewerbeabfall — GewAbfV-Erklärung erforderlich (Begründung Nicht-Trennung).", description: "Baumischabfall (nicht sortenrein)" },
+    // Siedlungsabfälle (Kapitel 20)
+    { avv_number: "20 03 01", title: "Gemischte Siedlungsabfälle", category: "Siedlungsabfälle", is_hazardous: false, requires_gewabfv_declaration: true, warning_text: "Gemischter Gewerbeabfall — GewAbfV-Erklärung erforderlich.", description: "Gewerblicher Restmüll / Mischmüll" },
+    { avv_number: "20 01 01", title: "Papier und Pappe", category: "Siedlungsabfälle", is_hazardous: false, requires_gewabfv_declaration: false, description: "Sortenrein gesammeltes Papier/Pappe" },
+    { avv_number: "20 02 01", title: "Grünschnitt", category: "Siedlungsabfälle", is_hazardous: false, requires_gewabfv_declaration: false, description: "Garten- und Parkabfälle" },
+    { avv_number: "20 03 07", title: "Sperrmüll", category: "Siedlungsabfälle", is_hazardous: false, requires_gewabfv_declaration: true, warning_text: "GewAbfV-Erklärung erforderlich bei gewerblicher Entsorgung.", description: "Sperrige Abfälle" },
+  ]
+
+  for (const code of codes) {
+    await wasteCodeService.createWasteCodes({ ...code, is_active: true })
+  }
+
+  console.log(`Seed complete: ${codes.length} AVV-Abfallschlüssel erstellt`)
+}
+```
+
+**Step 5: In medusa-config.ts registrieren, Migration, Seed**
+
+```bash
+npx medusa db:generate waste_code_setup
+npx medusa db:migrate
+npx medusa exec src/scripts/seed-waste-codes.ts
+```
+
+**Step 6: Commit**
+
+```bash
+git add backend/src/modules/waste-code/ backend/src/api/store/waste-codes/ backend/src/scripts/seed-waste-codes.ts backend/medusa-config.ts
+git commit -m "feat: add AVV waste code module with seed data"
+```
+
+---
+
+## Task 5C: Custom Module — GewAbfV Declarations
+
+**Files:**
+- Create: `backend/src/modules/gewabfv/models/gewabfv-declaration.ts`
+- Create: `backend/src/modules/gewabfv/service.ts`
+- Create: `backend/src/modules/gewabfv/index.ts`
+- Create: `backend/src/api/store/gewabfv-declarations/route.ts`
+- Modify: `backend/medusa-config.ts`
+
+**Step 1: Datenmodell**
+
+```typescript
+// backend/src/modules/gewabfv/models/gewabfv-declaration.ts
+import { model } from "@medusajs/framework/utils"
+
+const GewAbfVDeclaration = model.define("gewabfv_declaration", {
+  id: model.id().primaryKey(),
+  order_id: model.text().nullable(),
+  customer_id: model.text(),
+  delivery_location_id: model.text(),
+  avv_number: model.text(),
+  is_separated: model.boolean().default(false),
+  justification_type: model.text().nullable(),  // "technical" | "economic" | "other"
+  justification_text: model.text().nullable(),
+  signed_at: model.dateTime().nullable(),
+  year: model.number(),
+})
+
+export default GewAbfVDeclaration
+```
+
+**Step 2: Service + Module**
+
+```typescript
+// backend/src/modules/gewabfv/service.ts
+import { MedusaService } from "@medusajs/framework/utils"
+import GewAbfVDeclaration from "./models/gewabfv-declaration"
+
+class GewAbfVService extends MedusaService({ GewAbfVDeclaration }) {}
+export default GewAbfVService
+```
+
+```typescript
+// backend/src/modules/gewabfv/index.ts
+import { Module } from "@medusajs/framework/utils"
+import GewAbfVService from "./service"
+
+export const GEWABFV_MODULE = "gewabfv"
+export default Module(GEWABFV_MODULE, { service: GewAbfVService })
+```
+
+**Step 3: API-Route**
+
+```typescript
+// backend/src/api/store/gewabfv-declarations/route.ts
+import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { GEWABFV_MODULE } from "../../../modules/gewabfv"
+
+export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  const gewabfvService = req.scope.resolve(GEWABFV_MODULE)
+  const customerId = req.auth_context?.actor_id
+  if (!customerId) return res.status(401).json({ message: "Not authenticated" })
+
+  const declarations = await gewabfvService.listGewAbfVDeclarations({
+    customer_id: customerId,
+  })
+  res.json({ declarations })
+}
+
+export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
+  const gewabfvService = req.scope.resolve(GEWABFV_MODULE)
+  const customerId = req.auth_context?.actor_id
+  if (!customerId) return res.status(401).json({ message: "Not authenticated" })
+
+  const declaration = await gewabfvService.createGewAbfVDeclarations({
+    ...req.body,
+    customer_id: customerId,
+    signed_at: new Date(),
+    year: new Date().getFullYear(),
+  })
+  res.status(201).json({ declaration })
+}
+```
+
+**Step 4: Registrieren + Migration**
+
+```bash
+npx medusa db:generate gewabfv_setup
+npx medusa db:migrate
+```
+
+**Step 5: Commit**
+
+```bash
+git add backend/src/modules/gewabfv/ backend/src/api/store/gewabfv-declarations/ backend/medusa-config.ts
+git commit -m "feat: add GewAbfV declaration module for waste separation compliance"
 ```
 
 ---

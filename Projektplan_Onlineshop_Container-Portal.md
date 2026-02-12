@@ -105,6 +105,108 @@ Erstellt → Bestätigt → Disponiert → In Ausführung → Abgeschlossen
 
 ---
 
+## 3A. Erzeuger-Pflichten & Compliance im Bestellprozess
+
+### 3A.1 Erweitertes Kundenprofil
+
+Bei der Erstregistrierung oder nachträglichen Ergänzung muss das Kundenprofil folgende Felder unterstützen:
+
+| Feld | Pflicht | Bedingung |
+|------|---------|-----------|
+| **Gewerbenachweis** (Upload) | Ja | Bei Erstregistrierung |
+| **Erzeugernummer** (Behörde) | Bedingt | Pflicht wenn gefährliche Abfälle bestellt werden |
+| **eANV-Vollmacht** (Upload + digitale Bestätigung) | Bedingt | Pflicht wenn Entsorger eANV-Vertretung übernimmt |
+| **TRGS-519-Sachkundenachweis** (Upload) | Bedingt | Pflicht bei Asbest- oder KMF-Bestellungen |
+
+### 3A.2 AVV-Abfallschlüssel-Zuordnung
+
+Kein freies Textfeld — stattdessen ein geführter Auswahlprozess:
+
+```
+Auswahl-Flow:
+1. Abfallkategorie wählen (z.B. "Bau- und Abbruchabfälle")
+2. Abfallart wählen (z.B. "Beton, Ziegel, Fliesen")
+3. AVV-Nummer wird automatisch zugeordnet (z.B. 17 01 01)
+4. Klartextbeschreibung + Warnhinweise bei gefährlichen Abfallarten (*)
+5. Gefährliche Abfälle (*) lösen zusätzliche Pflichtfelder aus
+```
+
+Die AVV-Datenbank wird als eigenes Datenmodell gepflegt:
+
+```typescript
+WasteCode {
+  id: string
+  avv_number: string          // z.B. "17 01 01"
+  title: string               // z.B. "Beton"
+  category: string            // z.B. "Bau- und Abbruchabfälle"
+  is_hazardous: boolean       // Gefährlicher Abfall (*)
+  requires_trgs519: boolean   // Asbest/KMF → Sachkundenachweis nötig
+  description: string         // Klartext-Beschreibung
+  warning_text: string        // Warnhinweis für Besteller
+  is_active: boolean
+}
+```
+
+### 3A.3 Conditional Checkout Flow (Bedingter Bestellprozess)
+
+Je nach Abfallart werden unterschiedliche Pflichtfelder und Uploads eingeblendet:
+
+| Abfallart | Zusätzliche Pflichten im Checkout |
+|-----------|----------------------------------|
+| **Normaler Bauschutt** (nicht gefährlich, sortenrein) | Keine zusätzlichen Felder |
+| **Gemischter Gewerbeabfall** (AVV 17 09 04, 20 03 01 etc.) | GewAbfV-Erklärung: Begründung warum Trennung technisch nicht möglich oder wirtschaftlich unzumutbar. Ab Juli 2026: Fotodokumentation als Nachweis (Upload) |
+| **Gefährliche Abfälle** (AVV mit *) | Erzeugernummer (Pflichtfeld), eANV-Vollmacht (Upload falls nicht vorhanden), Bestätigung Entsorgungsnachweis |
+| **Asbest / KMF** (AVV 17 06 01*, 17 06 05*) | Alles von "Gefährliche Abfälle" PLUS TRGS-519-Sachkundenachweis (Upload, wird vor Bestellfreigabe geprüft) |
+
+### 3A.4 GewAbfV-Erklärung im Bestellprozess
+
+Bei gemischten Gewerbeabfällen muss der Besteller im Checkout:
+
+1. Bestätigen, dass eine Getrennthaltung geprüft wurde
+2. Begründung auswählen oder freitext eingeben:
+   - "Technisch nicht möglich (Platzmangel auf der Baustelle)"
+   - "Wirtschaftlich unzumutbar (Menge < 1m³ pro Fraktion)"
+   - "Andere Begründung: [Freitext]"
+3. **Ab Juli 2026 (GewAbfV-Novelle):** Foto-Upload als Nachweis der Gegebenheiten vor Ort
+
+```
+Datenmodell:
+GewAbfVDeclaration {
+  id: string
+  order_id: string
+  customer_id: string
+  delivery_location_id: string
+  avv_number: string
+  is_separated: boolean
+  justification_type: "technical" | "economic" | "other"
+  justification_text: string
+  photo_evidence_keys: string[]    // MinIO Storage Keys (ab Juli 2026)
+  signed_at: Date
+  year: number
+}
+```
+
+### 3A.5 eANV-Vertretung & Digitale Signatur
+
+- Bei gefährlichen Abfällen: rechtlich bindende Erklärung (mindestens Checkbox mit Rechtsbelehrung)
+- Vollmacht für eANV-Vertretung durch den Entsorger: digitaler Upload + Bestätigung
+- Langfristig: Integration qualifizierter elektronischer Signatur (z.B. via sign-me, Swisscom AIS)
+- Begleitscheine und Entsorgungsnachweise werden dem Auftrag zugeordnet und revisionssicher archiviert
+
+### 3A.6 TRGS-519-Prüfung (Asbest/KMF)
+
+```
+Prüf-Flow:
+1. Kunde wählt Abfallart mit requires_trgs519 = true
+2. System prüft: Hat der Kunde einen gültigen TRGS-519-Nachweis hinterlegt?
+   → Ja: Bestellung kann fortgesetzt werden
+   → Nein: Upload-Aufforderung, Bestellung blockiert bis Nachweis vorliegt
+3. Admin kann Nachweis prüfen und freigeben
+4. Nachweis wird mit Ablaufdatum gespeichert
+```
+
+---
+
 ## 4. Admin-Funktionen (Betreiber-Seite)
 
 | Modul | Beschreibung |

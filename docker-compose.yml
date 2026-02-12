@@ -52,6 +52,20 @@ services:
     volumes:
       - ./backend/src:/app/src
 
+  storefront:
+    build:
+      context: ./storefront
+      dockerfile: Dockerfile.dev
+    container_name: containershop-storefront
+    depends_on:
+      - medusa
+    ports:
+      - "8000:3000"
+    environment:
+      NEXT_PUBLIC_MEDUSA_URL: http://localhost:9000
+    volumes:
+      - ./storefront/src:/app/src
+
 volumes:
   postgres_data:
   redis_data:
