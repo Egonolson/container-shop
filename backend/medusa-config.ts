@@ -17,5 +17,11 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/delivery-location",
     },
+    {
+      resolve: "./src/modules/waste-code",
+    },
+    {
+      resolve: "./src/modules/gewabfv",
+    },
   ],
 })
