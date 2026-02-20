@@ -50,21 +50,29 @@ export default async function seedServices({ container }: ExecArgs) {
   )
 
   // --- Region: Deutschland (EUR) ---
-  logger.info("Creating region Deutschland...")
-  const { result: regionResult } = await createRegionsWorkflow(container).run({
-    input: {
-      regions: [
-        {
-          name: "Deutschland",
-          currency_code: "eur",
-          countries: ["de"],
-          payment_providers: ["pp_system_default"],
-        },
-      ],
-    },
-  })
-  const region = regionResult[0]
-  logger.info(`Region created: ${region.id}`)
+  const regionModuleService = container.resolve(Modules.REGION)
+  let existingRegions = await regionModuleService.listRegions({ name: "Deutschland" })
+  let region = existingRegions[0]
+
+  if (!region) {
+    logger.info("Creating region Deutschland...")
+    const { result: regionResult } = await createRegionsWorkflow(container).run({
+      input: {
+        regions: [
+          {
+            name: "Deutschland",
+            currency_code: "eur",
+            countries: ["de"],
+            payment_providers: ["pp_system_default"],
+          },
+        ],
+      },
+    })
+    region = regionResult[0]
+    logger.info(`Region created: ${region.id}`)
+  } else {
+    logger.info(`Region already exists: ${region.id}`)
+  }
 
   // --- Sales Channel: Container-Portal ---
   logger.info("Creating sales channel Container-Portal...")
@@ -90,10 +98,11 @@ export default async function seedServices({ container }: ExecArgs) {
   const salesChannel = salesChannels[0]
   logger.info(`Sales channel: ${salesChannel.id}`)
 
-  // --- Build products from JSON catalog ---
+  // --- Build products from JSON catalog (skip existing) ---
+  const productModuleService = container.resolve(Modules.PRODUCT)
   const eur = "eur" as const
 
-  const allProducts = catalog.categories.flatMap((category) =>
+  const allCatalogProducts = catalog.categories.flatMap((category) =>
     category.products.map((product) => ({
       title: product.title,
       handle: product.handle,
@@ -116,14 +125,29 @@ export default async function seedServices({ container }: ExecArgs) {
     }))
   )
 
-  logger.info(`Creating ${allProducts.length} container products...`)
-  await createProductsWorkflow(container).run({
-    input: {
-      products: allProducts,
-    },
-  })
+  const existingProducts = await productModuleService.listProducts(
+    {},
+    { select: ["handle"] }
+  )
+  const existingHandles = new Set(existingProducts.map((p: any) => p.handle))
+  const newProducts = allCatalogProducts.filter(
+    (p) => !existingHandles.has(p.handle)
+  )
+
+  if (newProducts.length === 0) {
+    logger.info(
+      `All ${allCatalogProducts.length} products already exist — skipping.`
+    )
+  } else {
+    logger.info(
+      `Creating ${newProducts.length} new products (${existingHandles.size} already exist)...`
+    )
+    await createProductsWorkflow(container).run({
+      input: { products: newProducts },
+    })
+  }
 
   logger.info(
-    `Seed complete: ${allProducts.length} Container-Services mit Varianten erstellt`
+    `Seed complete: ${allCatalogProducts.length} Container-Services konfiguriert`
   )
 }
