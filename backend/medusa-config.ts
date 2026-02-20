@@ -3,8 +3,15 @@ import { loadEnv, defineConfig } from '@medusajs/framework/utils'
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
 module.exports = defineConfig({
+  admin: {
+    backendUrl: process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
+  },
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    redisUrl: process.env.REDIS_URL,
+    databaseDriverOptions: {
+      connection: { ssl: false },
+    },
     http: {
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
@@ -15,13 +22,37 @@ module.exports = defineConfig({
   },
   modules: [
     {
-      resolve: "./src/modules/delivery-location",
+      resolve: "./src/modules/delivery_location",
     },
     {
-      resolve: "./src/modules/waste-code",
+      resolve: "./src/modules/waste_code",
     },
     {
       resolve: "./src/modules/gewabfv",
+    },
+    {
+      resolve: "./src/modules/delivery_schedule",
+    },
+    {
+      resolve: "@medusajs/medusa/notification",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/email-notification",
+            id: "email-notification",
+            options: {
+              channels: ["email"],
+              name: "Email Notification Provider",
+              host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
+              port: Number(process.env.SMTP_PORT || 587),
+              user: process.env.SMTP_USER || "",
+              pass: process.env.SMTP_PASS || "",
+              from: process.env.SMTP_FROM || "noreply@seyfarth-container.de",
+              from_name: process.env.SMTP_FROM_NAME || "Seyfarth Container-Dienst",
+            },
+          },
+        ],
+      },
     },
   ],
 })

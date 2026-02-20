@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: containershop-postgres
+    environment:
+      POSTGRES_USER: medusa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: medusa-store
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medusa"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: containershop-redis
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  medusa:
+    build: ./backend
+    container_name: containershop-medusa
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://medusa:${POSTGRES_PASSWORD}@postgres:5432/medusa-store
+      REDIS_URL: redis://redis:6379
+      STORE_CORS: https://container.visionmakegpt.work
+      ADMIN_CORS: https://container.visionmakegpt.work
+      AUTH_CORS: https://container.visionmakegpt.work
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      SMTP_HOST: ${SMTP_HOST:-smtp-relay.brevo.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM:-noreply@seyfarth-container.de}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Seyfarth Container-Dienst}
+      OPERATOR_EMAIL: ${OPERATOR_EMAIL:-info@seyfarth-container.de}
+    volumes:
+      - admin_build:/app/.medusa/server/public/admin
+    restart: unless-stopped
+
+  storefront:
+    build:
+      context: ./storefront
+      args:
+        NEXT_PUBLIC_MEDUSA_URL: https://container.visionmakegpt.work
+        NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${MEDUSA_PUBLISHABLE_KEY}
+    container_name: containershop-storefront
+    depends_on:
+      - medusa
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: containershop-nginx
+    ports:
+      - "8090:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - admin_build:/usr/share/nginx/admin:ro
+    depends_on:
+      - medusa
+      - storefront
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  admin_build:

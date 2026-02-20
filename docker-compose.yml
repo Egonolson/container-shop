@@ -49,6 +49,13 @@ services:
       AUTH_CORS: http://localhost:8000,http://localhost:9000
       COOKIE_SECRET: prototype-cookie-secret-change-in-prod
       JWT_SECRET: prototype-jwt-secret-change-in-prod
+      SMTP_HOST: ${SMTP_HOST:-smtp-relay.brevo.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@seyfarth-container.de}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Seyfarth Container-Dienst}
+      OPERATOR_EMAIL: ${OPERATOR_EMAIL:-info@seyfarth-container.de}
     volumes:
       - ./backend/src:/app/src
 
@@ -63,6 +70,9 @@ services:
       - "8000:3000"
     environment:
       NEXT_PUBLIC_MEDUSA_URL: http://localhost:9000
+      MEDUSA_INTERNAL_URL: http://medusa:9000
+      NEXT_PUBLIC_SITE_URL: http://localhost:8000
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${MEDUSA_PUBLISHABLE_KEY:-pk_86277091f5d70188b2d63bad51666da7f0430ccbdc73a7d9f513e41064fd477e}
     volumes:
       - ./storefront/src:/app/src
 
