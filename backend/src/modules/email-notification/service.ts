@@ -64,6 +64,10 @@ export class EmailNotificationService extends AbstractNotificationProviderServic
         pass: options.pass,
       },
     })
+
+    this.transporter_.verify().catch((err) => {
+      this.logger_.warn(`SMTP connection verification failed: ${err.message}. Email sending will fail.`)
+    })
   }
 
   async send(

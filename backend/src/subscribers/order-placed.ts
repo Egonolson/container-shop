@@ -35,13 +35,19 @@ export default async function orderPlacedHandler({
     data: orderData,
   })
 
-  // Send notification email to the operator
-  await notificationService.createNotifications({
-    to: OPERATOR_EMAIL,
-    channel: "email",
-    template: "order-placed-internal",
-    data: orderData,
-  })
+  // Operator email — non-critical, catch independently so a failure here
+  // does not cause Medusa to retry the subscriber and duplicate the customer email
+  try {
+    await notificationService.createNotifications({
+      to: OPERATOR_EMAIL,
+      channel: "email",
+      template: "order-placed-internal",
+      data: orderData,
+    })
+  } catch (err) {
+    // Log but don't re-throw
+    console.warn(`Failed to send operator notification for order ${order.id}: ${(err as Error).message}`)
+  }
 }
 
 export const config: SubscriberConfig = {
