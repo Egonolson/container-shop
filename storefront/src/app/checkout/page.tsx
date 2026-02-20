@@ -113,8 +113,9 @@ export default function CheckoutPage() {
 
   // Selection state
   const [selectedLocation, setSelectedLocation] = useState<any>(null)
-  const [orderType, setOrderType] = useState("stellen")
-  const [desiredDate, setDesiredDate] = useState("")
+  const [scheduleEntries, setScheduleEntries] = useState<
+    { type: string; date: string }[]
+  >([{ type: "stellen", date: "" }])
   const [notes, setNotes] = useState("")
 
   // Guest location (manual entry)
@@ -385,8 +386,7 @@ export default function CheckoutPage() {
           ...locationInfo,
           ...guestInfo,
           checkout_mode: checkoutMode,
-          order_type: orderType,
-          desired_date: desiredDate,
+          schedule: scheduleEntries,
           avv_numbers: complianceInfo.avvNumbers,
           has_hazardous: complianceInfo.hasHazardous,
           erzeuger_nummer: erzeugerNummer || undefined,
@@ -394,14 +394,21 @@ export default function CheckoutPage() {
         },
       })
 
-      // Create delivery schedule if date requested (only for authenticated)
-      if (desiredDate && isAuthenticated) {
-        await fetch(`${API_URL}/store/delivery-schedules`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ requested_date: desiredDate }),
-        })
+      // Create delivery schedules for entries with dates (only for authenticated)
+      if (isAuthenticated) {
+        for (const entry of scheduleEntries) {
+          if (entry.date) {
+            await fetch(`${API_URL}/store/delivery-schedules`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                requested_date: entry.date,
+                schedule_type: entry.type,
+              }),
+            }).catch(() => {})
+          }
+        }
       }
 
       clearCart()
@@ -1180,46 +1187,97 @@ export default function CheckoutPage() {
             <CardContent className="p-6 space-y-5">
               <h2 className="text-lg font-semibold text-zinc-900">Auftragsdetails</h2>
 
-              <div>
-                <Label className="text-sm font-medium">Auftragsart</Label>
-                <div className="flex gap-2 mt-2 flex-wrap">
-                  {[
-                    { key: "stellen", label: "Stellen" },
-                    { key: "abholen", label: "Abholen" },
-                    { key: "wechseln", label: "Wechseln" },
-                    { key: "umladen", label: "Umladen" },
-                  ].map((t) => (
-                    <Button
-                      key={t.key}
-                      variant={orderType === t.key ? "default" : "outline"}
-                      onClick={() => setOrderType(t.key)}
-                      className={`rounded-full ${
-                        orderType === t.key
-                          ? "bg-seyfarth-blue hover:bg-seyfarth-navy text-white"
-                          : ""
-                      }`}
-                    >
-                      {t.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="desiredDate" className="text-sm font-medium">
-                  Wunschtermin
-                </Label>
-                <Input
-                  id="desiredDate"
-                  type="date"
-                  value={desiredDate}
-                  onChange={(e) => setDesiredDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  className="mt-1.5 max-w-xs"
-                />
-                <p className="text-xs text-zinc-400 mt-1">
-                  Optional — wir melden uns zur Terminabstimmung.
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Termine</Label>
+                <p className="text-xs text-zinc-500">
+                  Legen Sie einen oder mehrere Termine für Ihren Auftrag an. Wunschtermin ist optional — wir melden uns zur Abstimmung.
                 </p>
+
+                {scheduleEntries.map((entry, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 border rounded-xl space-y-3 bg-zinc-50/50"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                        Termin {idx + 1}
+                      </span>
+                      {scheduleEntries.length > 1 && (
+                        <button
+                          onClick={() =>
+                            setScheduleEntries((prev) =>
+                              prev.filter((_, i) => i !== idx)
+                            )
+                          }
+                          className="p-1 text-zinc-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-zinc-600">Auftragsart</Label>
+                      <div className="flex gap-2 mt-1.5 flex-wrap">
+                        {[
+                          { key: "stellen", label: "Stellen" },
+                          { key: "abholen", label: "Abholen" },
+                          { key: "wechseln", label: "Wechseln" },
+                          { key: "umladen", label: "Umladen" },
+                        ].map((t) => (
+                          <Button
+                            key={t.key}
+                            size="sm"
+                            variant={entry.type === t.key ? "default" : "outline"}
+                            onClick={() =>
+                              setScheduleEntries((prev) =>
+                                prev.map((e, i) =>
+                                  i === idx ? { ...e, type: t.key } : e
+                                )
+                              )
+                            }
+                            className={`rounded-full text-xs ${
+                              entry.type === t.key
+                                ? "bg-seyfarth-blue hover:bg-seyfarth-navy text-white"
+                                : ""
+                            }`}
+                          >
+                            {t.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-zinc-600">Wunschtermin</Label>
+                      <Input
+                        type="date"
+                        value={entry.date}
+                        onChange={(e) =>
+                          setScheduleEntries((prev) =>
+                            prev.map((en, i) =>
+                              i === idx ? { ...en, date: e.target.value } : en
+                            )
+                          )
+                        }
+                        min={new Date().toISOString().split("T")[0]}
+                        className="mt-1 max-w-xs"
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  onClick={() =>
+                    setScheduleEntries((prev) => [
+                      ...prev,
+                      { type: "stellen", date: "" },
+                    ])
+                  }
+                  className="w-full p-3 border border-dashed rounded-xl text-sm text-zinc-500 hover:text-zinc-700 hover:border-zinc-400 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus className="h-4 w-4" /> Weiteren Termin hinzufügen
+                </button>
               </div>
 
               <div>
@@ -1297,20 +1355,31 @@ export default function CheckoutPage() {
                     </>
                   )}
 
-                  <p className="text-zinc-500">Auftragsart:</p>
-                  <p className="text-zinc-900 capitalize">{orderType}</p>
-
-                  <p className="text-zinc-500">Wunschtermin:</p>
-                  <p className="text-zinc-900">
-                    {desiredDate
-                      ? new Date(desiredDate).toLocaleDateString("de-DE", {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })
-                      : "Kein Wunschtermin"}
-                  </p>
+                  <p className="text-zinc-500">Termine:</p>
+                  <div className="text-zinc-900">
+                    {scheduleEntries.map((entry, idx) => {
+                      const typeLabels: Record<string, string> = {
+                        stellen: "Stellen",
+                        abholen: "Abholen",
+                        wechseln: "Wechseln",
+                        umladen: "Umladen",
+                      }
+                      return (
+                        <p key={idx}>
+                          <span className="font-medium">{typeLabels[entry.type] || entry.type}</span>
+                          {" — "}
+                          {entry.date
+                            ? new Date(entry.date).toLocaleDateString("de-DE", {
+                                weekday: "short",
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })
+                            : "Termin offen"}
+                        </p>
+                      )
+                    })}
+                  </div>
 
                   {notes && (
                     <>
