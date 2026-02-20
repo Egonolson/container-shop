@@ -73,6 +73,7 @@ services:
       MEDUSA_INTERNAL_URL: http://medusa:9000
       NEXT_PUBLIC_SITE_URL: http://localhost:8000
       NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${MEDUSA_PUBLISHABLE_KEY:-pk_86277091f5d70188b2d63bad51666da7f0430ccbdc73a7d9f513e41064fd477e}
+      NEXT_PUBLIC_MAIN_WEBSITE_URL: ${MAIN_WEBSITE_URL:-https://www.seyfarth-container.de}
     volumes:
       - ./storefront/src:/app/src
 

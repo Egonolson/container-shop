@@ -60,6 +60,7 @@ services:
       args:
         NEXT_PUBLIC_MEDUSA_URL: https://container.visionmakegpt.work
         NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${MEDUSA_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_MAIN_WEBSITE_URL: ${MAIN_WEBSITE_URL:-https://www.seyfarth-container.de}
     container_name: containershop-storefront
     depends_on:
       - medusa
