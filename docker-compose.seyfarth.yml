@@ -1,0 +1,136 @@
+# ============================================================
+# Container-Dienst Seyfarth — Isolierter Docker Stack
+# Dev:  hetzner-claw  — Port 8092 — seyfarth-dev.visionmakegpt.work
+# Prod: hetzner-prod  — Port 8092 — seyfarth.visionmakegpt.work
+# ============================================================
+# Alle Container laufen in eigenem Netzwerk (seyfarth-net)
+# Kein Konflikt mit anderen Projekten.
+# ============================================================
+
+networks:
+  seyfarth-net:
+    name: seyfarth-net
+    driver: bridge
+
+volumes:
+  seyfarth-postgres-data:
+    name: seyfarth-postgres-data
+  seyfarth-redis-data:
+    name: seyfarth-redis-data
+  seyfarth-admin-build:
+    name: seyfarth-admin-build
+
+services:
+  # --- PostgreSQL ---
+  seyfarth-postgres:
+    image: postgres:16-alpine
+    container_name: seyfarth-postgres
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    environment:
+      POSTGRES_USER: seyfarth
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: seyfarth-store
+    volumes:
+      - seyfarth-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seyfarth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- Redis ---
+  seyfarth-redis:
+    image: redis:7-alpine
+    container_name: seyfarth-redis
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    volumes:
+      - seyfarth-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Medusa Backend ---
+  seyfarth-medusa:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: seyfarth-medusa:${IMAGE_TAG:-latest}
+    container_name: seyfarth-medusa
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    depends_on:
+      seyfarth-postgres:
+        condition: service_healthy
+      seyfarth-redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgres://seyfarth:${POSTGRES_PASSWORD}@seyfarth-postgres:5432/seyfarth-store
+      REDIS_URL: redis://seyfarth-redis:6379
+      MEDUSA_BACKEND_URL: ${MEDUSA_BACKEND_URL}
+      STORE_CORS: ${STORE_CORS}
+      ADMIN_CORS: ${ADMIN_CORS}
+      AUTH_CORS: ${AUTH_CORS}
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      SMTP_HOST: ${SMTP_HOST:-smtp-relay.brevo.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@seyfarth-container.de}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Seyfarth Container-Dienst}
+      OPERATOR_EMAIL: ${OPERATOR_EMAIL:-info@seyfarth-container.de}
+    volumes:
+      - seyfarth-admin-build:/app/.medusa/server/public/admin
+
+  # --- Next.js Storefront ---
+  seyfarth-storefront:
+    build:
+      context: ./storefront
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_MEDUSA_URL: ${MEDUSA_BACKEND_URL}
+        NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${MEDUSA_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_MAIN_WEBSITE_URL: ${MAIN_WEBSITE_URL:-https://www.containerdienst-seyfarth.de}
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL}
+    image: seyfarth-storefront:${IMAGE_TAG:-latest}
+    container_name: seyfarth-storefront
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    depends_on:
+      - seyfarth-medusa
+
+  # --- Cloudflare Tunnel (nur Prod: seyfarth.visionmakegpt.work) ---
+  # Für Dev-Deployment auskommentieren oder ENABLE_TUNNEL=false setzen
+  seyfarth-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: seyfarth-tunnel
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./tunnel-config.yml:/etc/cloudflared/config.yml:ro
+      - /opt/seyfarth/tunnel-credentials.json:/etc/cloudflared/tunnel-credentials.json:ro
+    depends_on:
+      - seyfarth-nginx
+    profiles:
+      - prod  # Nur mit: docker compose --profile prod up
+
+  # --- Nginx (Reverse Proxy für Backend + Storefront) ---
+  seyfarth-nginx:
+    image: nginx:alpine
+    container_name: seyfarth-nginx
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    ports:
+      - "8092:80"   # Einziger nach aussen geöffneter Port
+    volumes:
+      - ./nginx.seyfarth.conf:/etc/nginx/conf.d/default.conf:ro
+      - seyfarth-admin-build:/usr/share/nginx/admin:ro
+    depends_on:
+      - seyfarth-medusa
+      - seyfarth-storefront

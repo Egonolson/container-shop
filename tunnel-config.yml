@@ -1,0 +1,9 @@
+tunnel: 560dfa7a-b3b3-4626-b295-c5409996aaff
+credentials-file: /etc/cloudflared/tunnel-credentials.json
+
+ingress:
+  # Seyfarth Container-Portal
+  - hostname: seyfarth.visionmakegpt.work
+    service: http://seyfarth-nginx:80
+  # Catch-all (required)
+  - service: http_status:404

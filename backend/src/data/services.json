@@ -1,189 +1,286 @@
 {
-  "_comment": "Container-Service-Katalog für Seyfarth Entsorgung. Preise in Cent (25000 = 250,00 EUR). Diese Datei kann ohne Code-Änderungen bearbeitet werden — einfach Preise/Produkte anpassen und seed-Script erneut ausführen. HINWEIS: Aktuelle Preise sind Platzhalter und müssen mit den echten Kundenpreisen aktualisiert werden.",
+  "_comment": "Container-Service-Katalog für Seyfarth Entsorgung. Preise in Cent (25000 = 250,00 EUR). Quelle: containerdienst-seyfarth.onepage.me. Platzhalterpreise - bitte mit echten Preisen ersetzen.",
   "categories": [
     {
-      "name": "Absetzcontainer",
-      "description": "Kleine bis mittlere Container für Baustellen und Gewerbe",
+      "name": "BigBag & Multicar",
+      "description": "Ideal für kleinere Baustellen- und Gartenabfaelle, 1 m³ bis 3 m³",
       "products": [
         {
-          "title": "Absetzcontainer 3m³",
-          "handle": "absetzcontainer-3m3",
-          "description": "Kleiner Absetzcontainer für begrenzte Flächen und Privatprojekte",
-          "option": "Abfallart",
+          "title": "BigBag",
+          "handle": "bigbag",
+          "description": "BigBag für Gartenabfaelle, Bauschutt und Erdaushub. In 1, 2 und 3 m³ – platzsparend und flexibel einsetzbar.",
+          "options": ["Größe", "Abfallart"],
+          "optionValues": {
+            "Größe": ["1 m³", "2 m³", "3 m³"],
+            "Abfallart": ["Bauschutt", "Gruenschnitt", "Erdaushub", "Mischabfall"]
+          },
           "variants": [
-            { "title": "Bauschutt", "sku": "AC3-BAUSCHUTT", "price": 28900 },
-            { "title": "Mischmüll", "sku": "AC3-MISCHMUELL", "price": 34900 },
-            { "title": "Holz (A1-A3)", "sku": "AC3-HOLZ", "price": 24900 },
-            { "title": "Grünschnitt", "sku": "AC3-GRUENSCHNITT", "price": 19900 }
+            { "title": "1 m³ / Bauschutt",    "sku": "BB1-BAUSCHUTT",    "price": 8900,  "options": { "Größe": "1 m³", "Abfallart": "Bauschutt" } },
+            { "title": "1 m³ / Gruenschnitt",  "sku": "BB1-GRUENSCHNITT", "price": 7900,  "options": { "Größe": "1 m³", "Abfallart": "Gruenschnitt" } },
+            { "title": "1 m³ / Erdaushub",     "sku": "BB1-ERDAUSHUB",    "price": 6900,  "options": { "Größe": "1 m³", "Abfallart": "Erdaushub" } },
+            { "title": "1 m³ / Mischabfall",   "sku": "BB1-MISCHABFALL",  "price": 9900,  "options": { "Größe": "1 m³", "Abfallart": "Mischabfall" } },
+            { "title": "2 m³ / Bauschutt",    "sku": "BB2-BAUSCHUTT",    "price": 14900, "options": { "Größe": "2 m³", "Abfallart": "Bauschutt" } },
+            { "title": "2 m³ / Gruenschnitt",  "sku": "BB2-GRUENSCHNITT", "price": 12900, "options": { "Größe": "2 m³", "Abfallart": "Gruenschnitt" } },
+            { "title": "2 m³ / Erdaushub",     "sku": "BB2-ERDAUSHUB",    "price": 11900, "options": { "Größe": "2 m³", "Abfallart": "Erdaushub" } },
+            { "title": "2 m³ / Mischabfall",   "sku": "BB2-MISCHABFALL",  "price": 16900, "options": { "Größe": "2 m³", "Abfallart": "Mischabfall" } },
+            { "title": "3 m³ / Bauschutt",    "sku": "BB3-BAUSCHUTT",    "price": 18900, "options": { "Größe": "3 m³", "Abfallart": "Bauschutt" } },
+            { "title": "3 m³ / Gruenschnitt",  "sku": "BB3-GRUENSCHNITT", "price": 16900, "options": { "Größe": "3 m³", "Abfallart": "Gruenschnitt" } },
+            { "title": "3 m³ / Erdaushub",     "sku": "BB3-ERDAUSHUB",    "price": 14900, "options": { "Größe": "3 m³", "Abfallart": "Erdaushub" } },
+            { "title": "3 m³ / Mischabfall",   "sku": "BB3-MISCHABFALL",  "price": 21900, "options": { "Größe": "3 m³", "Abfallart": "Mischabfall" } }
           ]
         },
         {
-          "title": "Absetzcontainer 5m³",
-          "handle": "absetzcontainer-5m3",
-          "description": "Kompakter Absetzcontainer — ideal für Privatprojekte und kleine Baustellen",
-          "option": "Abfallart",
+          "title": "Multicar-Transport",
+          "handle": "multicar-transport",
+          "description": "Flexibler Kleintransport für enge Zufahrten und Innenbereiche. Ideal wenn kein normaler LKW hinkommt.",
+          "options": ["Menge"],
+          "optionValues": {
+            "Menge": ["bis 1 Tonne", "bis 2 Tonnen", "bis 3 Tonnen"]
+          },
           "variants": [
-            { "title": "Bauschutt", "sku": "AC5-BAUSCHUTT", "price": 32900 },
-            { "title": "Mischmüll", "sku": "AC5-MISCHMUELL", "price": 39900 },
-            { "title": "Grünschnitt", "sku": "AC5-GRUENSCHNITT", "price": 22900 },
-            { "title": "Holz (A1-A3)", "sku": "AC5-HOLZ", "price": 29900 },
-            { "title": "Erdaushub", "sku": "AC5-ERDAUSHUB", "price": 27900 }
+            { "title": "bis 1 Tonne",   "sku": "MC-1T", "price": 12900, "options": { "Menge": "bis 1 Tonne" } },
+            { "title": "bis 2 Tonnen",  "sku": "MC-2T", "price": 19900, "options": { "Menge": "bis 2 Tonnen" } },
+            { "title": "bis 3 Tonnen",  "sku": "MC-3T", "price": 26900, "options": { "Menge": "bis 3 Tonnen" } }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "name": "Absetzcontainer",
+      "description": "Für Renovierung, Umbau und größere Entruempelungen, 3 m³ bis 10 m³",
+      "products": [
         {
-          "title": "Absetzcontainer 7m³",
-          "handle": "absetzcontainer-7m3",
-          "description": "Standard-Absetzcontainer für Baustellen und Renovierungen",
-          "option": "Abfallart",
+          "title": "Absetzcontainer",
+          "handle": "absetzcontainer",
+          "description": "Absetzcontainer für Renovierungen, Entruempelungen und Baustellen. In 3, 5, 7 und 10 m³ – nur verfügbare Kombinationen buchbar.",
+          "options": ["Größe", "Abfallart"],
+          "optionValues": {
+            "Größe": ["3 m³", "5 m³", "7 m³", "10 m³"],
+            "Abfallart": ["Bauschutt", "Mischmüll", "Holz (A1-A3)", "Gruenschnitt", "Erdaushub", "Sperrmüll", "Baumischabfall"]
+          },
           "variants": [
-            { "title": "Bauschutt", "sku": "AC7-BAUSCHUTT", "price": 38900 },
-            { "title": "Mischmüll", "sku": "AC7-MISCHMUELL", "price": 44900 },
-            { "title": "Holz (A1-A3)", "sku": "AC7-HOLZ", "price": 34900 },
-            { "title": "Sperrmüll", "sku": "AC7-SPERRMUELL", "price": 49900 }
-          ]
-        },
-        {
-          "title": "Absetzcontainer 10m³",
-          "handle": "absetzcontainer-10m3",
-          "description": "Großer Absetzcontainer für umfangreiche Bauprojekte und Renovierungen",
-          "option": "Abfallart",
-          "variants": [
-            { "title": "Bauschutt", "sku": "AC10-BAUSCHUTT", "price": 44900 },
-            { "title": "Mischmüll", "sku": "AC10-MISCHMUELL", "price": 54900 },
-            { "title": "Sperrmüll", "sku": "AC10-SPERRMUELL", "price": 59900 },
-            { "title": "Holz (A1-A3)", "sku": "AC10-HOLZ", "price": 39900 },
-            { "title": "Baumischabfall", "sku": "AC10-BAUMISCH", "price": 62900 }
+            { "title": "3 m³ / Bauschutt",       "sku": "AC3-BAUSCHUTT",    "price": 28900, "options": { "Größe": "3 m³",  "Abfallart": "Bauschutt" } },
+            { "title": "3 m³ / Mischmüll",        "sku": "AC3-MISCHMUELL",   "price": 34900, "options": { "Größe": "3 m³",  "Abfallart": "Mischmüll" } },
+            { "title": "3 m³ / Holz (A1-A3)",     "sku": "AC3-HOLZ",         "price": 24900, "options": { "Größe": "3 m³",  "Abfallart": "Holz (A1-A3)" } },
+            { "title": "3 m³ / Gruenschnitt",      "sku": "AC3-GRUENSCHNITT", "price": 19900, "options": { "Größe": "3 m³",  "Abfallart": "Gruenschnitt" } },
+            { "title": "5 m³ / Bauschutt",       "sku": "AC5-BAUSCHUTT",    "price": 32900, "options": { "Größe": "5 m³",  "Abfallart": "Bauschutt" } },
+            { "title": "5 m³ / Mischmüll",        "sku": "AC5-MISCHMUELL",   "price": 39900, "options": { "Größe": "5 m³",  "Abfallart": "Mischmüll" } },
+            { "title": "5 m³ / Gruenschnitt",      "sku": "AC5-GRUENSCHNITT", "price": 22900, "options": { "Größe": "5 m³",  "Abfallart": "Gruenschnitt" } },
+            { "title": "5 m³ / Holz (A1-A3)",     "sku": "AC5-HOLZ",         "price": 29900, "options": { "Größe": "5 m³",  "Abfallart": "Holz (A1-A3)" } },
+            { "title": "5 m³ / Erdaushub",        "sku": "AC5-ERDAUSHUB",    "price": 27900, "options": { "Größe": "5 m³",  "Abfallart": "Erdaushub" } },
+            { "title": "7 m³ / Bauschutt",       "sku": "AC7-BAUSCHUTT",    "price": 38900, "options": { "Größe": "7 m³",  "Abfallart": "Bauschutt" } },
+            { "title": "7 m³ / Mischmüll",        "sku": "AC7-MISCHMUELL",   "price": 44900, "options": { "Größe": "7 m³",  "Abfallart": "Mischmüll" } },
+            { "title": "7 m³ / Holz (A1-A3)",     "sku": "AC7-HOLZ",         "price": 34900, "options": { "Größe": "7 m³",  "Abfallart": "Holz (A1-A3)" } },
+            { "title": "7 m³ / Sperrmüll",        "sku": "AC7-SPERRMUELL",   "price": 49900, "options": { "Größe": "7 m³",  "Abfallart": "Sperrmüll" } },
+            { "title": "10 m³ / Bauschutt",      "sku": "AC10-BAUSCHUTT",   "price": 44900, "options": { "Größe": "10 m³", "Abfallart": "Bauschutt" } },
+            { "title": "10 m³ / Mischmüll",       "sku": "AC10-MISCHMUELL",  "price": 54900, "options": { "Größe": "10 m³", "Abfallart": "Mischmüll" } },
+            { "title": "10 m³ / Sperrmüll",       "sku": "AC10-SPERRMUELL",  "price": 59900, "options": { "Größe": "10 m³", "Abfallart": "Sperrmüll" } },
+            { "title": "10 m³ / Holz (A1-A3)",    "sku": "AC10-HOLZ",        "price": 39900, "options": { "Größe": "10 m³", "Abfallart": "Holz (A1-A3)" } },
+            { "title": "10 m³ / Baumischabfall",  "sku": "AC10-BAUMISCH",    "price": 62900, "options": { "Größe": "10 m³", "Abfallart": "Baumischabfall" } }
           ]
         }
       ]
     },
     {
       "name": "Abrollcontainer",
-      "description": "Große Container für Gewerbe, Industrie und Großbaustellen",
+      "description": "Für Großbaustellen und gewerbliche Projekte, 7 m³ bis 40 m³",
       "products": [
         {
-          "title": "Abrollcontainer 10m³",
-          "handle": "abrollcontainer-10m3",
-          "description": "Großer Abrollcontainer für umfangreiche Projekte",
-          "option": "Abfallart",
+          "title": "Abrollcontainer",
+          "handle": "abrollcontainer",
+          "description": "Abrollcontainer für Großbaustellen, Gewerbe und Industrie. In 7 bis 40 m³ – nur verfügbare Kombinationen buchbar.",
+          "options": ["Größe", "Abfallart"],
+          "optionValues": {
+            "Größe": ["7 m³", "10 m³", "15 m³", "20 m³", "30 m³", "36 m³", "40 m³"],
+            "Abfallart": ["Bauschutt", "Boden / Erdaushub", "Mischmüll", "Holz (A1-A3)", "Gewerbeabfall", "Baumischabfall", "Sperrmüll"]
+          },
           "variants": [
-            { "title": "Bauschutt", "sku": "ARC10-BAUSCHUTT", "price": 52900 },
-            { "title": "Mischmüll", "sku": "ARC10-MISCHMUELL", "price": 59900 },
-            { "title": "Boden / Erdaushub", "sku": "ARC10-ERDAUSHUB", "price": 44900 }
-          ]
-        },
-        {
-          "title": "Abrollcontainer 15m³",
-          "handle": "abrollcontainer-15m3",
-          "description": "Mittelgroßer Abrollcontainer für Gewerbe und größere Bauprojekte",
-          "option": "Abfallart",
-          "variants": [
-            { "title": "Bauschutt", "sku": "ARC15-BAUSCHUTT", "price": 62900 },
-            { "title": "Mischmüll", "sku": "ARC15-MISCHMUELL", "price": 69900 },
-            { "title": "Boden / Erdaushub", "sku": "ARC15-ERDAUSHUB", "price": 54900 },
-            { "title": "Holz (A1-A3)", "sku": "ARC15-HOLZ", "price": 57900 },
-            { "title": "Gewerbeabfall", "sku": "ARC15-GEWERBE", "price": 74900 }
-          ]
-        },
-        {
-          "title": "Abrollcontainer 20m³",
-          "handle": "abrollcontainer-20m3",
-          "description": "Extra-großer Abrollcontainer für Gewerbe und Industrie",
-          "option": "Abfallart",
-          "variants": [
-            { "title": "Mischmüll", "sku": "ARC20-MISCHMUELL", "price": 79900 },
-            { "title": "Holz (A1-A3)", "sku": "ARC20-HOLZ", "price": 64900 },
-            { "title": "Gewerbeabfall", "sku": "ARC20-GEWERBE", "price": 89900 }
-          ]
-        },
-        {
-          "title": "Abrollcontainer 30m³",
-          "handle": "abrollcontainer-30m3",
-          "description": "Großvolumiger Abrollcontainer für Abbrucharbeiten und Großbaustellen",
-          "option": "Abfallart",
-          "variants": [
-            { "title": "Bauschutt", "sku": "ARC30-BAUSCHUTT", "price": 84900 },
-            { "title": "Baumischabfall", "sku": "ARC30-BAUMISCH", "price": 99900 },
-            { "title": "Holz (A1-A3)", "sku": "ARC30-HOLZ", "price": 79900 },
-            { "title": "Gewerbeabfall", "sku": "ARC30-GEWERBE", "price": 109900 }
-          ]
-        },
-        {
-          "title": "Abrollcontainer 36m³",
-          "handle": "abrollcontainer-36m3",
-          "description": "Extra-großer Abrollcontainer für Industrieabfälle und Großprojekte",
-          "option": "Abfallart",
-          "variants": [
-            { "title": "Bauschutt", "sku": "ARC36-BAUSCHUTT", "price": 94900 },
-            { "title": "Baumischabfall", "sku": "ARC36-BAUMISCH", "price": 114900 },
-            { "title": "Gewerbeabfall", "sku": "ARC36-GEWERBE", "price": 124900 },
-            { "title": "Sperrmüll", "sku": "ARC36-SPERRMUELL", "price": 119900 }
+            { "title": "7 m³ / Bauschutt",          "sku": "ARC7-BAUSCHUTT",   "price": 44900,  "options": { "Größe": "7 m³",  "Abfallart": "Bauschutt" } },
+            { "title": "7 m³ / Boden / Erdaushub",  "sku": "ARC7-ERDAUSHUB",   "price": 36900,  "options": { "Größe": "7 m³",  "Abfallart": "Boden / Erdaushub" } },
+            { "title": "7 m³ / Mischmüll",           "sku": "ARC7-MISCHMUELL",  "price": 49900,  "options": { "Größe": "7 m³",  "Abfallart": "Mischmüll" } },
+            { "title": "10 m³ / Bauschutt",         "sku": "ARC10-BAUSCHUTT",  "price": 52900,  "options": { "Größe": "10 m³", "Abfallart": "Bauschutt" } },
+            { "title": "10 m³ / Mischmüll",          "sku": "ARC10-MISCHMUELL", "price": 59900,  "options": { "Größe": "10 m³", "Abfallart": "Mischmüll" } },
+            { "title": "10 m³ / Boden / Erdaushub", "sku": "ARC10-ERDAUSHUB",  "price": 44900,  "options": { "Größe": "10 m³", "Abfallart": "Boden / Erdaushub" } },
+            { "title": "15 m³ / Bauschutt",         "sku": "ARC15-BAUSCHUTT",  "price": 62900,  "options": { "Größe": "15 m³", "Abfallart": "Bauschutt" } },
+            { "title": "15 m³ / Mischmüll",          "sku": "ARC15-MISCHMUELL", "price": 69900,  "options": { "Größe": "15 m³", "Abfallart": "Mischmüll" } },
+            { "title": "15 m³ / Boden / Erdaushub", "sku": "ARC15-ERDAUSHUB",  "price": 54900,  "options": { "Größe": "15 m³", "Abfallart": "Boden / Erdaushub" } },
+            { "title": "15 m³ / Holz (A1-A3)",      "sku": "ARC15-HOLZ",       "price": 57900,  "options": { "Größe": "15 m³", "Abfallart": "Holz (A1-A3)" } },
+            { "title": "15 m³ / Gewerbeabfall",      "sku": "ARC15-GEWERBE",    "price": 74900,  "options": { "Größe": "15 m³", "Abfallart": "Gewerbeabfall" } },
+            { "title": "20 m³ / Mischmüll",          "sku": "ARC20-MISCHMUELL", "price": 79900,  "options": { "Größe": "20 m³", "Abfallart": "Mischmüll" } },
+            { "title": "20 m³ / Holz (A1-A3)",      "sku": "ARC20-HOLZ",       "price": 64900,  "options": { "Größe": "20 m³", "Abfallart": "Holz (A1-A3)" } },
+            { "title": "20 m³ / Gewerbeabfall",      "sku": "ARC20-GEWERBE",    "price": 89900,  "options": { "Größe": "20 m³", "Abfallart": "Gewerbeabfall" } },
+            { "title": "20 m³ / Boden / Erdaushub", "sku": "ARC20-ERDAUSHUB",  "price": 62900,  "options": { "Größe": "20 m³", "Abfallart": "Boden / Erdaushub" } },
+            { "title": "30 m³ / Bauschutt",         "sku": "ARC30-BAUSCHUTT",  "price": 84900,  "options": { "Größe": "30 m³", "Abfallart": "Bauschutt" } },
+            { "title": "30 m³ / Baumischabfall",     "sku": "ARC30-BAUMISCH",   "price": 99900,  "options": { "Größe": "30 m³", "Abfallart": "Baumischabfall" } },
+            { "title": "30 m³ / Holz (A1-A3)",      "sku": "ARC30-HOLZ",       "price": 79900,  "options": { "Größe": "30 m³", "Abfallart": "Holz (A1-A3)" } },
+            { "title": "30 m³ / Gewerbeabfall",      "sku": "ARC30-GEWERBE",    "price": 109900, "options": { "Größe": "30 m³", "Abfallart": "Gewerbeabfall" } },
+            { "title": "36 m³ / Bauschutt",         "sku": "ARC36-BAUSCHUTT",  "price": 94900,  "options": { "Größe": "36 m³", "Abfallart": "Bauschutt" } },
+            { "title": "36 m³ / Baumischabfall",     "sku": "ARC36-BAUMISCH",   "price": 114900, "options": { "Größe": "36 m³", "Abfallart": "Baumischabfall" } },
+            { "title": "36 m³ / Gewerbeabfall",      "sku": "ARC36-GEWERBE",    "price": 124900, "options": { "Größe": "36 m³", "Abfallart": "Gewerbeabfall" } },
+            { "title": "36 m³ / Sperrmüll",          "sku": "ARC36-SPERRMUELL", "price": 119900, "options": { "Größe": "36 m³", "Abfallart": "Sperrmüll" } },
+            { "title": "40 m³ / Bauschutt",         "sku": "ARC40-BAUSCHUTT",  "price": 109900, "options": { "Größe": "40 m³", "Abfallart": "Bauschutt" } },
+            { "title": "40 m³ / Baumischabfall",     "sku": "ARC40-BAUMISCH",   "price": 134900, "options": { "Größe": "40 m³", "Abfallart": "Baumischabfall" } },
+            { "title": "40 m³ / Gewerbeabfall",      "sku": "ARC40-GEWERBE",    "price": 144900, "options": { "Größe": "40 m³", "Abfallart": "Gewerbeabfall" } }
           ]
         }
       ]
     },
     {
       "name": "Spezialcontainer",
-      "description": "Spezialcontainer für gefährliche und regulierte Abfallarten",
+      "description": "Spezialcontainer für gefaehrliche und regulierte Abfallarten",
       "products": [
         {
-          "title": "Dachpappe-Container 7m³",
+          "title": "Dachpappe-Container 7 m³",
           "handle": "dachpappe-container-7m3",
-          "description": "Spezialcontainer für teerhaltige Dachpappe — fachgerechte Entsorgung als gefährlicher Abfall",
-          "option": "Variante",
+          "description": "Spezialcontainer für teerhaltige Dachpappe — fachgerechte Entsorgung als gefaehrlicher Abfall.",
+          "options": ["Variante"],
+          "optionValues": {
+            "Variante": ["Dachpappe teerhaltig", "Dachpappe teerfrei"]
+          },
           "variants": [
-            { "title": "Dachpappe teerhaltig", "sku": "DP7-TEERHALTIG", "price": 89900 },
-            { "title": "Dachpappe teerfrei", "sku": "DP7-TEERFREI", "price": 69900 }
+            { "title": "Dachpappe teerhaltig", "sku": "DP7-TEERHALTIG", "price": 89900, "options": { "Variante": "Dachpappe teerhaltig" } },
+            { "title": "Dachpappe teerfrei",   "sku": "DP7-TEERFREI",   "price": 69900, "options": { "Variante": "Dachpappe teerfrei" } }
           ]
         },
         {
           "title": "Asbest-Entsorgung (Big Bag)",
           "handle": "asbest-big-bag",
           "description": "Plattencontainer / Big Bag für asbesthaltige Baustoffe. TRGS 519 Sachkundenachweis erforderlich.",
-          "option": "Größe",
+          "options": ["Größe"],
+          "optionValues": {
+            "Größe": ["1 m³ Big Bag", "Plattencontainer 5 m³"]
+          },
           "variants": [
-            { "title": "1m³ Big Bag", "sku": "ASBEST-BB1", "price": 34900 },
-            { "title": "Plattencontainer 5m³", "sku": "ASBEST-PC5", "price": 129900 }
+            { "title": "1 m³ Big Bag",          "sku": "ASBEST-BB1",  "price": 34900,  "options": { "Größe": "1 m³ Big Bag" } },
+            { "title": "Plattencontainer 5 m³", "sku": "ASBEST-PC5",  "price": 129900, "options": { "Größe": "Plattencontainer 5 m³" } }
           ]
         },
         {
           "title": "KMF-Container (Mineralwolle)",
           "handle": "kmf-container",
           "description": "Container für künstliche Mineralfasern (alte Mineralwolle, Glaswolle). TRGS 521 / TRGS 519 beachten.",
-          "option": "Größe",
+          "options": ["Größe"],
+          "optionValues": {
+            "Größe": ["10 m³", "20 m³"]
+          },
           "variants": [
-            { "title": "10m³", "sku": "KMF-10", "price": 79900 },
-            { "title": "20m³", "sku": "KMF-20", "price": 129900 }
+            { "title": "10 m³", "sku": "KMF-10", "price": 79900,  "options": { "Größe": "10 m³" } },
+            { "title": "20 m³", "sku": "KMF-20", "price": 129900, "options": { "Größe": "20 m³" } }
           ]
         },
         {
           "title": "Erdaushub-Container",
           "handle": "erdaushub-container",
           "description": "Container für Erdaushub und Boden. Sortenreiner Erdaushub ohne Beimengungen.",
-          "option": "Größe",
+          "options": ["Größe"],
+          "optionValues": {
+            "Größe": ["7 m³ Absetzcontainer", "10 m³ Abrollcontainer", "15 m³ Abrollcontainer"]
+          },
           "variants": [
-            { "title": "7m³ Absetzcontainer", "sku": "ERD-AC7", "price": 34900 },
-            { "title": "10m³ Abrollcontainer", "sku": "ERD-ARC10", "price": 44900 },
-            { "title": "15m³ Abrollcontainer", "sku": "ERD-ARC15", "price": 54900 }
+            { "title": "7 m³ Absetzcontainer",    "sku": "ERD-AC7",   "price": 34900, "options": { "Größe": "7 m³ Absetzcontainer" } },
+            { "title": "10 m³ Abrollcontainer",   "sku": "ERD-ARC10", "price": 44900, "options": { "Größe": "10 m³ Abrollcontainer" } },
+            { "title": "15 m³ Abrollcontainer",   "sku": "ERD-ARC15", "price": 54900, "options": { "Größe": "15 m³ Abrollcontainer" } }
           ]
         },
         {
-          "title": "Gipskarton-Container 7m³",
+          "title": "Gipskarton-Container 7 m³",
           "handle": "gipskarton-container-7m3",
-          "description": "Container für Gipskartonplatten, Rigips und Gipsabfälle. Sortenrein sammeln.",
-          "option": "Variante",
+          "description": "Container für Gipskartonplatten, Rigips und Gipsabfaelle. Sortenrein sammeln.",
+          "options": ["Variante"],
+          "optionValues": {
+            "Variante": ["Standard"]
+          },
           "variants": [
-            { "title": "Standard", "sku": "GIPS-AC7", "price": 44900 }
+            { "title": "Standard", "sku": "GIPS-AC7", "price": 44900, "options": { "Variante": "Standard" } }
           ]
         },
         {
-          "title": "Styropor-Container 20m³",
+          "title": "Styropor-Container 20 m³",
           "handle": "styropor-container-20m3",
-          "description": "Großvolumiger Container für Styropor / EPS-Dämmplatten. HBCD-haltig oder HBCD-frei.",
-          "option": "Variante",
+          "description": "Großvolumiger Container für Styropor / EPS-Daemmplatten. HBCD-haltig oder HBCD-frei.",
+          "options": ["Variante"],
+          "optionValues": {
+            "Variante": ["HBCD-frei", "HBCD-haltig"]
+          },
           "variants": [
-            { "title": "HBCD-frei", "sku": "STYRO-20-FREI", "price": 89900 },
-            { "title": "HBCD-haltig", "sku": "STYRO-20-HBCD", "price": 149900 }
+            { "title": "HBCD-frei",   "sku": "STYRO-20-FREI", "price": 89900,  "options": { "Variante": "HBCD-frei" } },
+            { "title": "HBCD-haltig", "sku": "STYRO-20-HBCD", "price": 149900, "options": { "Variante": "HBCD-haltig" } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Recyclinghof Anlieferung",
+      "description": "Direkte Anlieferung auf unserem Recyclinghof in Ponitz — faire Abrechnung nach Gewicht",
+      "products": [
+        {
+          "title": "Bauschutt & Beton (Anlieferung)",
+          "handle": "recycling-bauschutt-anlieferung",
+          "description": "Direkte Anlieferung von Bauschutt, Beton, Ziegeln und Fliesen auf unserem Hof. Abrechnung per Tonne.",
+          "options": ["Menge"],
+          "optionValues": {
+            "Menge": ["bis 500 kg", "bis 1.000 kg", "pro Tonne (ab 1t)"]
+          },
+          "variants": [
+            { "title": "bis 500 kg",         "sku": "REC-BSCH-500",  "price": 1900, "options": { "Menge": "bis 500 kg" } },
+            { "title": "bis 1.000 kg",        "sku": "REC-BSCH-1000", "price": 3500, "options": { "Menge": "bis 1.000 kg" } },
+            { "title": "pro Tonne (ab 1t)",  "sku": "REC-BSCH-T",    "price": 2900, "options": { "Menge": "pro Tonne (ab 1t)" } }
+          ]
+        },
+        {
+          "title": "Altholz (Anlieferung)",
+          "handle": "recycling-altholz-anlieferung",
+          "description": "Anlieferung von Altholz, Moebeln, Paletten und Konstruktionsholz. A1-A4 Klassifizierung moeglich.",
+          "options": ["Menge"],
+          "optionValues": {
+            "Menge": ["bis 500 kg", "bis 1.000 kg", "pro Tonne (ab 1t)"]
+          },
+          "variants": [
+            { "title": "bis 500 kg",         "sku": "REC-HOLZ-500",  "price": 2500, "options": { "Menge": "bis 500 kg" } },
+            { "title": "bis 1.000 kg",        "sku": "REC-HOLZ-1000", "price": 4500, "options": { "Menge": "bis 1.000 kg" } },
+            { "title": "pro Tonne (ab 1t)",  "sku": "REC-HOLZ-T",    "price": 3900, "options": { "Menge": "pro Tonne (ab 1t)" } }
+          ]
+        },
+        {
+          "title": "Gruenschnitt (Anlieferung)",
+          "handle": "recycling-gruenschnitt-anlieferung",
+          "description": "Anlieferung von Heckenschnitt, Laub, Aesten und Gartenabfaellen.",
+          "options": ["Menge"],
+          "optionValues": {
+            "Menge": ["bis 500 kg", "bis 1.000 kg", "pro Tonne (ab 1t)"]
+          },
+          "variants": [
+            { "title": "bis 500 kg",         "sku": "REC-GRUEN-500",  "price": 1500, "options": { "Menge": "bis 500 kg" } },
+            { "title": "bis 1.000 kg",        "sku": "REC-GRUEN-1000", "price": 2700, "options": { "Menge": "bis 1.000 kg" } },
+            { "title": "pro Tonne (ab 1t)",  "sku": "REC-GRUEN-T",    "price": 2400, "options": { "Menge": "pro Tonne (ab 1t)" } }
+          ]
+        },
+        {
+          "title": "Metall & Schrott (Anlieferung)",
+          "handle": "recycling-metall-anlieferung",
+          "description": "Anlieferung von Metall, Schrott, Kupfer, Aluminium und Stahl. Faire Vergütung je nach Materialwert.",
+          "options": ["Materialart"],
+          "optionValues": {
+            "Materialart": ["Gemischter Schrott", "Kupfer / Messing", "Aluminium"]
+          },
+          "variants": [
+            { "title": "Gemischter Schrott", "sku": "REC-METALL-GEMISCHT", "price": 0, "options": { "Materialart": "Gemischter Schrott" } },
+            { "title": "Kupfer / Messing",   "sku": "REC-METALL-KUPFER",   "price": 0, "options": { "Materialart": "Kupfer / Messing" } },
+            { "title": "Aluminium",          "sku": "REC-METALL-ALU",      "price": 0, "options": { "Materialart": "Aluminium" } }
+          ]
+        },
+        {
+          "title": "Sperrmüll (Anlieferung)",
+          "handle": "recycling-sperrmuell-anlieferung",
+          "description": "Anlieferung von Sperrmuell, Matratzen, Teppichen und Grossmoebeln.",
+          "options": ["Menge"],
+          "optionValues": {
+            "Menge": ["bis 500 kg", "bis 1.000 kg", "pro Tonne (ab 1t)"]
+          },
+          "variants": [
+            { "title": "bis 500 kg",         "sku": "REC-SPERR-500",  "price": 3500, "options": { "Menge": "bis 500 kg" } },
+            { "title": "bis 1.000 kg",        "sku": "REC-SPERR-1000", "price": 6500, "options": { "Menge": "bis 1.000 kg" } },
+            { "title": "pro Tonne (ab 1t)",  "sku": "REC-SPERR-T",    "price": 5500, "options": { "Menge": "pro Tonne (ab 1t)" } }
           ]
         }
       ]

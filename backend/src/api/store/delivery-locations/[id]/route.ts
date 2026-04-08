@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { DELIVERY_LOCATION_MODULE } from "../../../../modules/delivery-location"
+import { DELIVERY_LOCATION_MODULE } from "../../../../modules/delivery_location"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const deliveryLocationService = req.scope.resolve(DELIVERY_LOCATION_MODULE)
@@ -9,9 +9,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
 export const PUT = async (req: MedusaRequest, res: MedusaResponse) => {
   const deliveryLocationService = req.scope.resolve(DELIVERY_LOCATION_MODULE)
+  const body = req.body as Record<string, unknown>
   const location = await deliveryLocationService.updateDeliveryLocations({
     id: req.params.id,
-    ...req.body,
+    ...body,
   })
   res.json({ delivery_location: location })
 }

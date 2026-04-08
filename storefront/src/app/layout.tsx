@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart";
-import { CookieBanner } from "@/components/public/cookie-banner";
+// CookieBanner ist in PublicShell — wird NICHT auf /embed geladen
 
 export const metadata: Metadata = {
   title: "Seyfarth Container-Dienst — Containerbestellung online",
@@ -22,7 +22,6 @@ export default function RootLayout({
             {children}
           </CartProvider>
         </AuthProvider>
-        <CookieBanner />
       </body>
     </html>
   );

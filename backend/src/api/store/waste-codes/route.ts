@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { WASTE_CODE_MODULE } from "../../../modules/waste-code"
+import { WASTE_CODE_MODULE } from "../../../modules/waste_code"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const wasteCodeService = req.scope.resolve(WASTE_CODE_MODULE)

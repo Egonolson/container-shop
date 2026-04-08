@@ -15,8 +15,11 @@ import {
   Package,
   CalendarCheck,
   ClipboardCheck,
+  Link2,
+  Copy,
 } from "lucide-react"
 import { useCart } from "@/lib/cart"
+import { CartToast } from "@/components/public/cart-toast"
 import { Button } from "@/components/ui/button"
 import { PublicShell } from "@/components/public/public-shell"
 import {
@@ -45,6 +48,16 @@ export function ProductLandingContent({ product }: ProductLandingContentProps) {
     product.variants?.[0] ?? null
   )
   const [added, setAdded] = useState(false)
+  const [toastVisible, setToastVisible] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function handleCopyLink() {
+    const url = typeof window !== "undefined" ? window.location.href : ""
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   const category = deriveCategory(product.handle || "")
   const categoryConfig = CATEGORY_CONFIG.find((c) => c.key === category)
@@ -76,6 +89,8 @@ export function ProductLandingContent({ product }: ProductLandingContentProps) {
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
+    setToastVisible(true)
+    setTimeout(() => setToastVisible(false), 2500)
   }
 
   return (
@@ -98,22 +113,40 @@ export function ProductLandingContent({ product }: ProductLandingContentProps) {
 
         {/* Header */}
         <div className="flex items-start gap-5 mb-8">
-          <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-zinc-100 flex items-center justify-center">
-            <Box className="h-8 w-8 text-zinc-300" strokeWidth={1} />
+          <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-seyfarth-navy/5 flex items-center justify-center">
+            <Box className="h-8 w-8 text-seyfarth-navy/40" strokeWidth={1} />
           </div>
-          <div>
+          <div className="flex-1">
             {categoryConfig && (
-              <p className="text-sm text-zinc-400 font-medium">{categoryConfig.label}</p>
+              <p className="text-sm text-zinc-400 font-medium">
+                {categoryConfig.label}
+              </p>
             )}
             <h1 className="text-2xl md:text-3xl font-bold text-seyfarth-navy">
               {product.title}
             </h1>
             {minPrice !== null && (
               <p className="text-lg font-semibold text-seyfarth-blue mt-1">
-                Ab {formatPrice(minPrice)}
+                ab {formatPrice(minPrice)}
               </p>
             )}
           </div>
+          {/* Quicklink Copy Button */}
+          <button
+            onClick={handleCopyLink}
+            title="Direktlink kopieren"
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border ${
+              copied
+                ? "bg-green-50 border-green-300 text-green-700"
+                : "bg-white border-zinc-200 text-zinc-500 hover:border-seyfarth-blue hover:text-seyfarth-blue"
+            }`}
+          >
+            {copied ? (
+              <><Check className="h-3.5 w-3.5" /> Kopiert!</>
+            ) : (
+              <><Link2 className="h-3.5 w-3.5" /> Quicklink</>
+            )}
+          </button>
         </div>
 
         {/* Description */}
@@ -261,6 +294,11 @@ export function ProductLandingContent({ product }: ProductLandingContentProps) {
           </Button>
         </div>
       </div>
+      <CartToast
+        productTitle={product.title}
+        variantTitle={selectedVariant?.title ?? ""}
+        visible={toastVisible}
+      />
     </PublicShell>
   )
 }

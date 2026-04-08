@@ -1,0 +1,4 @@
+[     210ms] [ERROR] Access to fetch at 'http://localhost:9000/store/regions?limit=1' from origin 'http://localhost:3333' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:3333/:0
+[     210ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:9000/store/regions?limit=1:0
+[     216ms] [ERROR] Access to fetch at 'http://localhost:9000/store/customers/me' from origin 'http://localhost:3333' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:3333/:0
+[     216ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:9000/store/customers/me:0

@@ -16,13 +16,15 @@ interface VariantData {
   title: string
   sku: string
   price: number
+  options: Record<string, string>
 }
 
 interface ProductData {
   title: string
   handle: string
   description: string
-  option: string
+  options: string[]
+  optionValues: Record<string, string[]>
   variants: VariantData[]
 }
 
@@ -108,16 +110,14 @@ export default async function seedServices({ container }: ExecArgs) {
       handle: product.handle,
       description: product.description,
       status: ProductStatus.PUBLISHED,
-      options: [
-        {
-          title: product.option,
-          values: product.variants.map((v) => v.title),
-        },
-      ],
+      options: product.options.map((optName) => ({
+        title: optName,
+        values: product.optionValues[optName],
+      })),
       variants: product.variants.map((v) => ({
         title: v.title,
         sku: v.sku,
-        options: { [product.option]: v.title },
+        options: v.options,
         prices: [{ amount: v.price, currency_code: eur }],
         manage_inventory: false,
       })),

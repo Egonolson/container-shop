@@ -2,18 +2,30 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import { medusa } from "./medusa"
 
+type CustomerType = "b2b" | "b2c"
+
 interface Customer {
   id: string
   email: string
   first_name: string
   last_name: string
   company_name?: string
+  metadata?: Record<string, unknown>
+}
+
+interface RegisterData {
+  first_name: string
+  last_name: string
+  company_name?: string
+  customer_type?: CustomerType
 }
 
 interface AuthContextType {
   customer: Customer | null
+  customerType: CustomerType
   loading: boolean
   login: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, data: RegisterData) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -36,13 +48,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCustomer(customer as any)
   }
 
+  const register = async (email: string, password: string, data: RegisterData) => {
+    await medusa.auth.register("customer", "emailpass", { email, password })
+    await medusa.auth.login("customer", "emailpass", { email, password })
+    const { customer } = await medusa.store.customer.create({
+      email,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      company_name: data.company_name,
+      metadata: { customer_type: data.customer_type || "b2b" },
+    })
+    setCustomer(customer as any)
+  }
+
   const logout = async () => {
     await medusa.auth.logout()
     setCustomer(null)
   }
 
+  const customerType: CustomerType = (customer?.metadata?.customer_type as CustomerType) || "b2b"
+
   return (
-    <AuthContext.Provider value={{ customer, loading, login, logout }}>
+    <AuthContext.Provider value={{ customer, customerType, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

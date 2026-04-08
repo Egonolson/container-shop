@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth"
 import { useCart } from "@/lib/cart"
@@ -87,6 +87,7 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState<Step>("cart")
   const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>(null)
+  const guestFormRef = useRef<HTMLDivElement>(null)
   const [locations, setLocations] = useState<any[]>([])
   const [dataLoading, setDataLoading] = useState(false)
 
@@ -443,7 +444,7 @@ export default function CheckoutPage() {
 
   return (
     <PublicShell>
-      <div className="max-w-3xl mx-auto px-6 py-12">
+      <div className="max-w-3xl mx-auto px-6 py-12 pb-24">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-seyfarth-navy mb-6">Bestellung aufgeben</h1>
@@ -597,7 +598,10 @@ export default function CheckoutPage() {
                     className={`cursor-pointer transition-all hover:shadow-md ${
                       isGuest ? "ring-2 ring-seyfarth-blue border-seyfarth-blue" : "hover:border-zinc-300"
                     }`}
-                    onClick={() => setCheckoutMode("guest")}
+                    onClick={() => {
+                      setCheckoutMode("guest")
+                      setTimeout(() => guestFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100)
+                    }}
                   >
                     <CardContent className="p-6 text-center">
                       <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
@@ -651,7 +655,7 @@ export default function CheckoutPage() {
 
                 {/* Guest Form */}
                 {isGuest && (
-                  <Card>
+                  <Card ref={guestFormRef as any}>
                     <CardContent className="p-6 space-y-4">
                       <h3 className="font-semibold text-zinc-900">Ihre Kontaktdaten</h3>
                       <div className="grid grid-cols-2 gap-3">
@@ -1420,8 +1424,12 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* ───────── Navigation ───────── */}
-        <div className="flex justify-between pt-4">
+      </div>
+
+      {/* ───────── Fixed Navigation ───────── */}
+      {/* pb-16 am Hauptcontent (unten) verhindert Überlappung */}
+      <div className="fixed bottom-0 left-0 right-0 z-[55] bg-white/95 backdrop-blur border-t border-zinc-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center gap-3">
           {getPrevStep(step) ? (
             <Button
               variant="outline"
@@ -1444,7 +1452,7 @@ export default function CheckoutPage() {
             <Button
               onClick={() => setStep(getNextStep(step)!)}
               disabled={!canProceed()}
-              className="bg-seyfarth-blue hover:bg-seyfarth-navy text-white rounded-full"
+              className="bg-seyfarth-blue hover:bg-seyfarth-navy text-white rounded-full px-8 disabled:opacity-40"
             >
               Weiter <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
@@ -1452,16 +1460,12 @@ export default function CheckoutPage() {
             <Button
               onClick={handleConfirm}
               disabled={!canProceed() || submitting}
-              className="bg-seyfarth-orange hover:bg-seyfarth-yellow hover:text-seyfarth-navy text-white rounded-full px-8"
+              className="bg-seyfarth-orange hover:bg-seyfarth-yellow hover:text-seyfarth-navy text-white rounded-full px-8 disabled:opacity-40"
             >
               {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Wird bestellt...
-                </>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Wird bestellt...</>
               ) : (
-                <>
-                  <Check className="h-4 w-4 mr-2" /> Auftrag bestätigen
-                </>
+                <><Check className="h-4 w-4 mr-2" /> Auftrag bestätigen</>
               )}
             </Button>
           ) : null}
