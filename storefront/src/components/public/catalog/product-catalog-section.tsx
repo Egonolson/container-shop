@@ -74,14 +74,15 @@ export function ProductCatalogSection({
   }
 
   return (
-    <section id="katalog" className={compact ? "py-8 bg-zinc-50/50" : "py-24 bg-zinc-50/50"}>
+    <section id="katalog" className={compact ? "py-8 bg-zinc-50/50" : "py-24 bg-white"}>
       <div className="max-w-7xl mx-auto px-4 md:px-6">
 
         {/* Header */}
         {!compact && (
           <div className="text-center mb-10">
-            <h2 className="font-headline text-3xl md:text-4xl text-seyfarth-navy italic">Unsere Container</h2>
-            <p className="mt-3 text-zinc-500">Wählen Sie die passende Kategorie für Ihr Projekt</p>
+            <p className="text-seyfarth-blue font-bold text-sm uppercase tracking-[0.18em] mb-3">Online-Konfigurator</p>
+            <h2 className="font-headline text-3xl md:text-4xl text-seyfarth-navy font-extrabold tracking-tight">Den passenden <span className="text-seyfarth-yellow italic">Container</span> wählen</h2>
+            <p className="mt-3 text-zinc-500">Kategorie, Größe und Abfallart auswählen — wir kümmern uns um Lieferung und Entsorgung.</p>
           </div>
         )}
 
@@ -93,8 +94,8 @@ export function ProductCatalogSection({
             onClick={() => setActiveCategory(null)}
             className={`flex flex-col items-center gap-2.5 px-3 py-5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 group ${
               activeCategory === null
-                ? "border-seyfarth-navy bg-seyfarth-navy text-white shadow-lg scale-[1.02]"
-                : "border-zinc-200 bg-white text-zinc-600 hover:border-seyfarth-navy/50 hover:text-seyfarth-navy hover:shadow-md"
+                ? "border-seyfarth-blue bg-seyfarth-navy text-white shadow-lg scale-[1.02]"
+                : "border-zinc-200 bg-white text-zinc-600 hover:border-seyfarth-blue/60 hover:text-seyfarth-navy hover:shadow-md"
             }`}
           >
             <LayoutGrid
@@ -119,8 +120,8 @@ export function ProductCatalogSection({
                 onClick={() => setActiveCategory(isActive ? null : cat.key)}
                 className={`flex flex-col items-center gap-2.5 px-3 py-5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 group ${
                   isActive
-                    ? "border-seyfarth-navy bg-seyfarth-navy text-white shadow-lg scale-[1.02]"
-                    : "border-zinc-200 bg-white text-zinc-600 hover:border-seyfarth-navy/50 hover:text-seyfarth-navy hover:shadow-md"
+                    ? "border-seyfarth-blue bg-seyfarth-navy text-white shadow-lg scale-[1.02]"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-seyfarth-blue/60 hover:text-seyfarth-navy hover:shadow-md"
                 }`}
               >
                 <Icon

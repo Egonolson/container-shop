@@ -1,7 +1,37 @@
-import Medusa from "@medusajs/js-sdk"
+type LegacyList = {
+  products: any[]
+  orders: any[]
+  regions: any[]
+  count: number
+}
 
-export const medusa = new Medusa({
-  baseUrl: process.env.NEXT_PUBLIC_MEDUSA_URL || "http://localhost:9000",
-  publishableKey: process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "",
-  debug: process.env.NODE_ENV === "development",
-})
+async function emptyList(..._args: any[]): Promise<LegacyList> {
+  return { products: [], orders: [], regions: [], count: 0 }
+}
+
+async function createDisabledCart(..._args: any[]): Promise<{ cart: { id: string; metadata?: Record<string, unknown> } }> {
+  return { cart: { id: "legacy-medusa-disabled" } }
+}
+
+async function noopCartMutation(..._args: any[]): Promise<Record<string, never>> {
+  return {}
+}
+
+export const medusa = {
+  store: {
+    order: {
+      list: emptyList,
+    },
+    product: {
+      list: emptyList,
+    },
+    region: {
+      list: emptyList,
+    },
+    cart: {
+      create: createDisabledCart,
+      createLineItem: noopCartMutation,
+      update: noopCartMutation,
+    },
+  },
+}

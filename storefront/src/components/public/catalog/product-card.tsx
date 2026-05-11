@@ -59,14 +59,14 @@ export function ProductCard({ product, onAddToCart, addedVariant, basePath = "" 
   }, [product.variants, firstOptionTitle, selectedFirstOption, isMultiOption])
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden border border-zinc-100 hover:shadow-lg hover:scale-[1.01] transition-all duration-300 flex flex-col">
+    <div className="bg-white rounded-[24px] overflow-hidden border border-zinc-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
       {/* Top accent stripe */}
       <div className={`h-1.5 ${accentColor}`} />
 
       <div className="p-7 flex-1 flex flex-col">
         {/* Icon + Title */}
         <div className="flex items-start gap-4 mb-4">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-seyfarth-navy/5 shrink-0 mt-0.5">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-seyfarth-yellow/35 shrink-0 mt-0.5">
             <Container className="h-6 w-6 text-seyfarth-navy" strokeWidth={1.5} />
           </div>
           <div>
@@ -84,7 +84,7 @@ export function ProductCard({ product, onAddToCart, addedVariant, basePath = "" 
         {/* Price badge */}
         {minPrice !== null && (
           <div className="mb-5">
-            <span className="inline-block bg-seyfarth-navy/5 text-seyfarth-navy px-3 py-1.5 rounded-lg text-sm font-semibold">
+            <span className="inline-block bg-seyfarth-blue/10 text-seyfarth-blue px-3 py-1.5 rounded-lg text-sm font-bold">
               ab {formatPrice(minPrice)}
             </span>
           </div>
@@ -106,7 +106,7 @@ export function ProductCard({ product, onAddToCart, addedVariant, basePath = "" 
                       onClick={() => setSelectedFirstOption(val === selectedFirstOption ? null : val)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                         selectedFirstOption === val
-                          ? "border-seyfarth-blue bg-seyfarth-blue/10 text-seyfarth-blue"
+                          ? "border-seyfarth-blue bg-seyfarth-blue text-white shadow-sm"
                           : "border-zinc-200 text-zinc-600 hover:border-zinc-300"
                       }`}
                     >
@@ -150,7 +150,7 @@ export function ProductCard({ product, onAddToCart, addedVariant, basePath = "" 
                               </span>
                             ) : (
                               <span className="flex items-center gap-1 text-xs text-seyfarth-blue mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                                In den Warenkorb <ArrowRight className="h-3 w-3" />
+                                Auswählen <ArrowRight className="h-3 w-3" />
                               </span>
                             )}
                           </button>
@@ -194,7 +194,7 @@ export function ProductCard({ product, onAddToCart, addedVariant, basePath = "" 
                           </span>
                         ) : (
                           <span className="flex items-center gap-1 text-xs text-seyfarth-blue mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                            In den Warenkorb <ArrowRight className="h-3 w-3" />
+                            Auswählen <ArrowRight className="h-3 w-3" />
                           </span>
                         )}
                       </button>

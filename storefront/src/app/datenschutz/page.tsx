@@ -2,288 +2,140 @@ import { Metadata } from "next"
 import { PublicShell } from "@/components/public/public-shell"
 
 export const metadata: Metadata = {
-  title: "Datenschutzerklaerung | Seyfarth Container-Dienst",
+  title: "Datenschutzerklärung | Seyfarth Container-Dienst",
+  description: "Datenschutzhinweise für die Website und das Anfrageformular von Seyfarth Container-Dienst.",
 }
 
 export default function DatenschutzPage() {
   return (
     <PublicShell>
-      <div className="max-w-4xl mx-auto px-6 py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         <div className="prose prose-zinc max-w-none">
-          <h1>Datenschutzerklaerung</h1>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-seyfarth-blue">Datenschutz</p>
+          <h1>Datenschutzerklärung</h1>
+          <p>
+            Diese Hinweise informieren Sie darüber, welche personenbezogenen Daten wir beim Besuch der Website und bei der Nutzung des Anfrageformulars verarbeiten.
+            Stand: 11. Mai 2026.
+          </p>
 
-          {/* 1. Verantwortlicher */}
           <h2>1. Verantwortlicher</h2>
           <p>
-            Verantwortlicher im Sinne der Datenschutz-Grundverordnung (DSGVO)
-            und anderer nationaler Datenschutzgesetze sowie sonstiger
-            datenschutzrechtlicher Bestimmungen ist:
+            Verantwortlich im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:
           </p>
           <p>
             <strong>Seyfarth Container-Dienst</strong>
             <br />
-            Inhaber: [Name]
+            Am Schreiber 1
             <br />
-            [Strasse + Hausnummer]
+            04639 Ponitz OT Grünberg
             <br />
-            [PLZ] Ponitz
+            Telefon: <a href="tel:034491552020">034491 552020</a>
             <br />
-            Telefon: [Telefonnummer]
-            <br />
-            E-Mail: [E-Mail-Adresse]
+            E-Mail: <a href="mailto:info@seyfarth-container.de">info@seyfarth-container.de</a>
           </p>
 
-          {/* 2. Hosting */}
-          <h2>2. Hosting</h2>
+          <h2>2. Hosting und Server-Logfiles</h2>
           <p>
-            Unsere Website wird bei der Hetzner Online GmbH, Industriestr. 25,
-            91710 Gunzenhausen, Deutschland, gehostet. Die Server befinden sich
-            ausschliesslich in deutschen Rechenzentren. Wenn Sie unsere Website
-            besuchen, erhebt der Hostinganbieter automatisch Informationen in
-            sogenannten Server-Log-Files, die Ihr Browser automatisch
-            uebermittelt (siehe Abschnitt 3).
+            Die Website wird auf Servern in Deutschland betrieben. Beim Aufruf der Website werden technisch notwendige Server-Logfiles verarbeitet. Dazu können insbesondere IP-Adresse, Datum und Uhrzeit des Zugriffs, aufgerufene URL, Referrer-URL, Browsertyp, Betriebssystem und HTTP-Status gehören.
           </p>
           <p>
-            Die Nutzung von Hetzner erfolgt auf Grundlage von Art. 6 Abs. 1
-            lit. f DSGVO. Wir haben ein berechtigtes Interesse an einer
-            zuverlaessigen und sicheren Darstellung unserer Website. Wir haben
-            einen Auftragsverarbeitungsvertrag (AVV) mit Hetzner geschlossen,
-            um den datenschutzkonformen Umgang mit personenbezogenen Daten
-            sicherzustellen.
+            Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse liegt in der sicheren, stabilen und fehlerfreien Bereitstellung der Website sowie in der Abwehr von Missbrauch. Server-Logfiles werden regelmäßig nach spätestens 14 Tagen gelöscht, sofern keine längere Speicherung zur Beweissicherung erforderlich ist.
           </p>
 
-          {/* 3. Server-Log-Files */}
-          <h2>3. Server-Log-Files</h2>
+          <h2>3. Online-Anfrageformular</h2>
           <p>
-            Der Provider der Seiten erhebt und speichert automatisch
-            Informationen in sogenannten Server-Log-Files, die Ihr Browser
-            automatisch an uns uebermittelt. Dies sind:
+            Wenn Sie über den Online-Konfigurator eine Anfrage senden, verarbeiten wir die von Ihnen eingegebenen Daten, um Ihre Anfrage zu prüfen und Sie zur Abstimmung von Preis, Termin, Verfügbarkeit und Rahmenbedingungen zu kontaktieren.
           </p>
+          <p>Verarbeitet werden je nach Anfrage insbesondere:</p>
           <ul>
-            <li>Browsertyp und Browserversion</li>
-            <li>Verwendetes Betriebssystem</li>
-            <li>Referrer-URL (die zuvor besuchte Seite)</li>
-            <li>Hostname des zugreifenden Rechners</li>
-            <li>IP-Adresse des zugreifenden Rechners</li>
-            <li>Uhrzeit der Serveranfrage</li>
+            <li>Name und optional Firmenname,</li>
+            <li>E-Mail-Adresse und Telefonnummer,</li>
+            <li>Liefer- oder Einsatzadresse mit Postleitzahl und Ort,</li>
+            <li>gewählte Leistung, Abfallart, Baustoff oder Transportbeschreibung,</li>
+            <li>Containergröße, Menge, Stellplatz- und Terminangaben,</li>
+            <li>Ihre Nachricht und technische Anfrage-Referenz.</li>
           </ul>
           <p>
-            Eine Zusammenfuehrung dieser Daten mit anderen Datenquellen wird
-            nicht vorgenommen. Die Erfassung dieser Daten erfolgt auf Grundlage
-            von Art. 6 Abs. 1 lit. f DSGVO. Der Websitebetreiber hat ein
-            berechtigtes Interesse an der technisch fehlerfreien Darstellung
-            und der Optimierung seiner Website — hierzu muessen die
-            Server-Log-Files erfasst werden.
+            Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, soweit die Anfrage zur Durchführung vorvertraglicher Maßnahmen erfolgt. Für technische Sicherheitsmaßnahmen, Missbrauchsschutz und Nachvollziehbarkeit der Anfrageverarbeitung stützen wir uns zusätzlich auf Art. 6 Abs. 1 lit. f DSGVO.
           </p>
           <p>
-            Die Server-Log-Files werden nach 14 Tagen automatisch geloescht,
-            sofern keine laengere Speicherung aus Beweissicherungsgruenden
-            erforderlich ist.
+            Die Anfrage wird serverseitig gespeichert und ausschließlich zur Bearbeitung der Anfrage genutzt. Eine Weitergabe erfolgt nur, soweit dies zur Bearbeitung erforderlich ist, gesetzlich vorgeschrieben ist oder Sie eingewilligt haben. Eine Weitergabe zu Werbezwecken findet nicht statt.
+          </p>
+          <p>
+            Anfragedaten werden gelöscht, sobald sie für die Bearbeitung nicht mehr erforderlich sind und keine gesetzlichen Aufbewahrungspflichten entgegenstehen. Sofern aus einer Anfrage ein Auftrag entsteht, können handels- und steuerrechtliche Aufbewahrungsfristen von regelmäßig sechs bzw. zehn Jahren gelten.
           </p>
 
-          {/* 4. Cookies */}
-          <h2>4. Cookies</h2>
+          <h2>4. Technisch notwendige Speicherung im Browser</h2>
           <p>
-            Unsere Website verwendet ausschliesslich technisch notwendige
-            Cookies. Diese Cookies sind erforderlich, damit Sie durch die
-            Seiten navigieren und wesentliche Funktionen nutzen koennen. Sie
-            dienen insbesondere der Aufrechterhaltung Ihrer Sitzung (Session)
-            waehrend der Nutzung unseres Online-Shops.
-          </p>
-          <p>
-            Technisch notwendige Cookies werden auf Grundlage von Art. 6
-            Abs. 1 lit. f DSGVO gesetzt. Wir haben ein berechtigtes Interesse
-            an der Speicherung technisch notwendiger Cookies zur technisch
-            fehlerfreien und optimierten Bereitstellung unserer Dienste. Eine
-            Einwilligung ist hierzu nach SS 25 Abs. 2 Nr. 2 TDDDG nicht
-            erforderlich.
-          </p>
-          <p>
-            Wir setzen keine Analyse-, Tracking- oder Marketing-Cookies ein.
-            Es werden keine Daten an Dritte zu Werbezwecken weitergegeben.
+            Die Website nutzt keine Analyse-, Tracking- oder Marketing-Cookies. Technisch notwendige lokale Speicherungen können eingesetzt werden, damit die Website bedienbar bleibt oder damit Sie eine Bestätigung nicht erneut sehen müssen.
           </p>
           <table>
             <thead>
               <tr>
-                <th>Cookie-Name</th>
+                <th>Name</th>
                 <th>Zweck</th>
                 <th>Speicherdauer</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>connect.sid</td>
-                <td>Session-Cookie fuer den Shop-Betrieb</td>
-                <td>Sitzungsende</td>
+                <td>cookie-consent</td>
+                <td>Speichert, dass der Cookie-/Datenschutzhinweis bestätigt wurde.</td>
+                <td>bis zu 1 Jahr im Browser</td>
               </tr>
               <tr>
-                <td>cookie-consent</td>
-                <td>Speicherung der Cookie-Hinweis-Bestaetigung</td>
-                <td>1 Jahr (localStorage)</td>
+                <td>seyfarth-last-request</td>
+                <td>Speichert nach dem Absenden nur Referenznummer, Zeitpunkt, Bereich und Anfrageart. Vollständige Kontaktdaten werden nicht im Browser gespeichert.</td>
+                <td>bis zur Löschung durch den Browser oder Nutzer</td>
               </tr>
             </tbody>
           </table>
 
-          {/* 5. Kundenkonto & Bestellabwicklung */}
-          <h2>5. Kundenkonto und Bestellabwicklung</h2>
+          <h2>5. Kontaktaufnahme per Telefon oder E-Mail</h2>
           <p>
-            Bei der Registrierung eines Kundenkontos und der Bestellabwicklung
-            erheben wir folgende personenbezogene Daten:
+            Wenn Sie uns telefonisch oder per E-Mail kontaktieren, verarbeiten wir die von Ihnen mitgeteilten Angaben zur Bearbeitung Ihres Anliegens und für Anschlussfragen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, wenn die Kontaktaufnahme mit einem Vertrag oder vorvertraglichen Maßnahmen zusammenhängt, andernfalls Art. 6 Abs. 1 lit. f DSGVO.
           </p>
+
+          <h2>6. Empfänger und Auftragsverarbeiter</h2>
+          <p>
+            Personenbezogene Daten werden intern nur den Stellen zugänglich gemacht, die sie zur Bearbeitung benötigen. Technische Dienstleister, insbesondere Hosting- oder Wartungsdienstleister, können im Rahmen einer Auftragsverarbeitung Zugriff auf Daten erhalten. Mit Auftragsverarbeitern bestehen die erforderlichen Vereinbarungen nach Art. 28 DSGVO.
+          </p>
+
+          <h2>7. Pflicht zur Bereitstellung</h2>
+          <p>
+            Die Pflichtfelder im Anfrageformular sind erforderlich, damit wir Ihre Anfrage fachlich prüfen und Sie erreichen können. Ohne diese Angaben können wir die Online-Anfrage nicht bearbeiten.
+          </p>
+
+          <h2>8. Ihre Rechte</h2>
+          <p>Ihnen stehen nach der DSGVO insbesondere folgende Rechte zu:</p>
           <ul>
-            <li>Firma / Unternehmensname</li>
-            <li>Vor- und Nachname des Ansprechpartners</li>
-            <li>E-Mail-Adresse</li>
-            <li>Telefonnummer</li>
-            <li>Lieferadresse(n)</li>
-            <li>Rechnungsadresse</li>
-            <li>Bestellhistorie und Auftragsdaten</li>
+            <li>Auskunft über Ihre gespeicherten personenbezogenen Daten (Art. 15 DSGVO),</li>
+            <li>Berichtigung unrichtiger Daten (Art. 16 DSGVO),</li>
+            <li>Löschung (Art. 17 DSGVO),</li>
+            <li>Einschränkung der Verarbeitung (Art. 18 DSGVO),</li>
+            <li>Datenübertragbarkeit (Art. 20 DSGVO),</li>
+            <li>Widerspruch gegen Verarbeitungen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO (Art. 21 DSGVO).</li>
           </ul>
           <p>
-            Die Verarbeitung dieser Daten erfolgt auf Grundlage von Art. 6
-            Abs. 1 lit. b DSGVO zur Erfuellung des Vertrages bzw. zur
-            Durchfuehrung vorvertraglicher Massnahmen. Die im Rahmen der
-            Bestellung erhobenen Daten werden bis zum Ablauf der gesetzlichen
-            Aufbewahrungsfristen (in der Regel 6 bzw. 10 Jahre gemaess HGB und
-            AO) gespeichert und danach geloescht, sofern keine laengere
-            Speicherung erforderlich ist.
-          </p>
-          <p>
-            Da es sich um einen B2B-Shop handelt, richten sich unsere
-            Leistungen ausschliesslich an Gewerbetreibende. Die Verarbeitung
-            der Daten Ihrer Mitarbeiter, die als Ansprechpartner fungieren,
-            erfolgt im Rahmen des berechtigten Interesses gemaess Art. 6 Abs. 1
-            lit. f DSGVO.
+            Zur Ausübung Ihrer Rechte können Sie sich über die oben genannten Kontaktdaten an uns wenden.
           </p>
 
-          {/* 6. E-Mail-Kontakt */}
-          <h2>6. Kontaktaufnahme per E-Mail</h2>
+          <h2>9. Beschwerderecht bei einer Aufsichtsbehörde</h2>
           <p>
-            Wenn Sie uns per E-Mail kontaktieren, werden Ihre Angaben
-            einschliesslich der von Ihnen angegebenen Kontaktdaten zwecks
-            Bearbeitung der Anfrage und fuer den Fall von Anschlussfragen bei
-            uns gespeichert. Diese Daten geben wir nicht ohne Ihre
-            Einwilligung weiter.
+            Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren, wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer personenbezogenen Daten gegen die DSGVO verstößt.
           </p>
           <p>
-            Die Verarbeitung dieser Daten erfolgt auf Grundlage von Art. 6
-            Abs. 1 lit. b DSGVO, sofern Ihre Anfrage mit der Erfuellung eines
-            Vertrags zusammenhaengt oder zur Durchfuehrung vorvertraglicher
-            Massnahmen erforderlich ist. In allen uebrigen Faellen beruht die
-            Verarbeitung auf Ihrem berechtigten Interesse an der effektiven
-            Bearbeitung der an uns gerichteten Anfragen (Art. 6 Abs. 1 lit. f
-            DSGVO).
-          </p>
-          <p>
-            Die von Ihnen bei der Kontaktaufnahme uebermittelten Daten
-            verbleiben bei uns, bis Sie uns zur Loeschung auffordern, Ihre
-            Einwilligung zur Speicherung widerrufen oder der Zweck fuer die
-            Datenspeicherung entfaellt. Zwingende gesetzliche Bestimmungen —
-            insbesondere Aufbewahrungsfristen — bleiben unberuehrt.
-          </p>
-
-          {/* 7. Rechte der Betroffenen */}
-          <h2>7. Rechte der betroffenen Personen</h2>
-          <p>
-            Ihnen stehen nach der DSGVO folgende Rechte in Bezug auf Ihre
-            personenbezogenen Daten zu:
-          </p>
-
-          <h3>7.1 Recht auf Auskunft (Art. 15 DSGVO)</h3>
-          <p>
-            Sie haben das Recht, eine Bestaetigung darueber zu verlangen, ob
-            personenbezogene Daten, die Sie betreffen, verarbeitet werden. Ist
-            dies der Fall, haben Sie ein Recht auf Auskunft ueber diese
-            personenbezogenen Daten und auf die in Art. 15 DSGVO genannten
-            Informationen.
-          </p>
-
-          <h3>7.2 Recht auf Berichtigung (Art. 16 DSGVO)</h3>
-          <p>
-            Sie haben das Recht, unverzueglich die Berichtigung unrichtiger
-            personenbezogener Daten zu verlangen. Unter Beruecksichtigung der
-            Zwecke der Verarbeitung haben Sie das Recht, die Vervollstaendigung
-            unvollstaendiger personenbezogener Daten zu verlangen.
-          </p>
-
-          <h3>7.3 Recht auf Loeschung (Art. 17 DSGVO)</h3>
-          <p>
-            Sie haben das Recht, zu verlangen, dass personenbezogene Daten, die
-            Sie betreffen, unverzueglich geloescht werden, sofern einer der in
-            Art. 17 DSGVO genannten Gruende zutrifft und die Verarbeitung nicht
-            zur Erfuellung einer rechtlichen Verpflichtung erforderlich ist.
-          </p>
-
-          <h3>7.4 Recht auf Einschraenkung der Verarbeitung (Art. 18 DSGVO)</h3>
-          <p>
-            Sie haben das Recht, die Einschraenkung der Verarbeitung zu
-            verlangen, wenn eine der in Art. 18 DSGVO genannten
-            Voraussetzungen gegeben ist, z.{"\u00A0"}B. wenn Sie die Richtigkeit
-            der Daten bestreiten.
-          </p>
-
-          <h3>7.5 Recht auf Datenportabilitaet (Art. 20 DSGVO)</h3>
-          <p>
-            Sie haben das Recht, die Sie betreffenden personenbezogenen Daten,
-            die Sie uns bereitgestellt haben, in einem strukturierten,
-            gaengigen und maschinenlesbaren Format zu erhalten. Sie haben
-            ausserdem das Recht, diese Daten einem anderen Verantwortlichen
-            ohne Behinderung zu uebermitteln.
-          </p>
-
-          <h3>7.6 Recht auf Widerspruch (Art. 21 DSGVO)</h3>
-          <p>
-            Sie haben das Recht, aus Gruenden, die sich aus Ihrer besonderen
-            Situation ergeben, jederzeit gegen die Verarbeitung der Sie
-            betreffenden personenbezogenen Daten, die auf Grundlage von Art. 6
-            Abs. 1 lit. f DSGVO erfolgt, Widerspruch einzulegen. Der
-            Verantwortliche verarbeitet die personenbezogenen Daten dann nicht
-            mehr, es sei denn, er kann zwingende schutzwuerdige Gruende fuer
-            die Verarbeitung nachweisen, die die Interessen, Rechte und
-            Freiheiten der betroffenen Person ueberwiegen.
-          </p>
-
-          {/* 8. Beschwerderecht */}
-          <h2>8. Beschwerderecht bei einer Aufsichtsbehoerde</h2>
-          <p>
-            Unbeschadet eines anderweitigen verwaltungsrechtlichen oder
-            gerichtlichen Rechtsbehelfs steht Ihnen das Recht auf Beschwerde
-            bei einer Aufsichtsbehoerde zu, wenn Sie der Ansicht sind, dass
-            die Verarbeitung der Sie betreffenden personenbezogenen Daten
-            gegen die DSGVO verstoesst.
-          </p>
-          <p>
-            Die fuer uns zustaendige Aufsichtsbehoerde ist:
-          </p>
-          <p>
-            Thueringer Landesbeauftragter fuer den Datenschutz und die
-            Informationsfreiheit
+            Für Thüringen ist zuständig:
             <br />
-            Haeusserstrasse 8
+            Thüringer Landesbeauftragter für den Datenschutz und die Informationsfreiheit
             <br />
-            99096 Erfurt
+            Häußlerstraße 8, 99096 Erfurt
             <br />
             Telefon: 0361 57-3112900
             <br />
-            E-Mail: poststelle@datenschutz.thueringen.de
+            E-Mail: <a href="mailto:poststelle@datenschutz.thueringen.de">poststelle@datenschutz.thueringen.de</a>
             <br />
-            Website:{" "}
-            <a
-              href="https://www.tlfdi.de"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              www.tlfdi.de
-            </a>
-          </p>
-
-          {/* 9. Aktualitaet */}
-          <h2>9. Aktualitaet und Aenderung dieser Datenschutzerklaerung</h2>
-          <p>
-            Diese Datenschutzerklaerung ist aktuell gueltig und hat den Stand
-            [Datum]. Durch die Weiterentwicklung unserer Website oder aufgrund
-            geaenderter gesetzlicher bzw. behoerdlicher Vorgaben kann es
-            notwendig werden, diese Datenschutzerklaerung zu aendern.
+            Website: <a href="https://www.tlfdi.de" target="_blank" rel="noopener noreferrer">www.tlfdi.de</a>
           </p>
         </div>
       </div>

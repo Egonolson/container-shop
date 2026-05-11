@@ -1,6 +1,5 @@
 "use client"
-import { createContext, useContext, useEffect, useState, ReactNode } from "react"
-import { medusa } from "./medusa"
+import { createContext, useContext, useState, ReactNode } from "react"
 
 type CustomerType = "b2b" | "b2c"
 
@@ -33,43 +32,23 @@ const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [customer, setCustomer] = useState<Customer | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    medusa.store.customer.retrieve()
-      .then(({ customer }) => setCustomer(customer as any))
-      .catch(() => setCustomer(null))
-      .finally(() => setLoading(false))
-  }, [])
-
-  const login = async (email: string, password: string) => {
-    await medusa.auth.login("customer", "emailpass", { email, password })
-    const { customer } = await medusa.store.customer.retrieve()
-    setCustomer(customer as any)
+  const login = async () => {
+    throw new Error("Kundenkonto-Anmeldung ist für öffentliche Anfragen aktuell nicht erforderlich. Bitte nutzen Sie den Anfrage-Konfigurator.")
   }
 
-  const register = async (email: string, password: string, data: RegisterData) => {
-    await medusa.auth.register("customer", "emailpass", { email, password })
-    await medusa.auth.login("customer", "emailpass", { email, password })
-    const { customer } = await medusa.store.customer.create({
-      email,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      company_name: data.company_name,
-      metadata: { customer_type: data.customer_type || "b2b" },
-    })
-    setCustomer(customer as any)
+  const register = async () => {
+    throw new Error("Registrierung ist für öffentliche Anfragen aktuell nicht erforderlich. Bitte nutzen Sie den Anfrage-Konfigurator.")
   }
 
   const logout = async () => {
-    await medusa.auth.logout()
     setCustomer(null)
   }
 
   const customerType: CustomerType = (customer?.metadata?.customer_type as CustomerType) || "b2b"
 
   return (
-    <AuthContext.Provider value={{ customer, customerType, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ customer, customerType, loading: false, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

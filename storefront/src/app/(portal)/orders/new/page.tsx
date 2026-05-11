@@ -368,7 +368,7 @@ export default function NewOrderPage() {
           </Card>
         )}
 
-        {/* STEP: Bestaetigung */}
+        {/* STEP: Bestätigung */}
         {step === "confirm" && (
           <Card>
             <CardHeader><CardTitle>Zusammenfassung</CardTitle></CardHeader>

@@ -38,7 +38,7 @@ export default function ImpressumPage() {
             [USt-IdNr.]
           </p>
 
-          <h2>Verantwortlich fuer den Inhalt nach SS 55 Abs. 2 RStV</h2>
+          <h2>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h2>
           <p>
             [Name]
             <br />

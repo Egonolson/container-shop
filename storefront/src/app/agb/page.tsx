@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { PublicShell } from "@/components/public/public-shell"
 
 export const metadata: Metadata = {
-  title: "Allgemeine Geschaeftsbedingungen | Seyfarth Container-Dienst",
+  title: "Allgemeine Geschäftsbedingungen | Seyfarth Container-Dienst",
 }
 
 export default function AGBPage() {
@@ -10,7 +10,7 @@ export default function AGBPage() {
     <PublicShell>
       <div className="max-w-4xl mx-auto px-6 py-16">
         <div className="prose prose-zinc max-w-none">
-          <h1>Allgemeine Geschaeftsbedingungen</h1>
+          <h1>Allgemeine Geschäftsbedingungen</h1>
 
           <p className="text-sm text-zinc-500 italic">
             Stand: [Datum] — Diese AGB werden derzeit erstellt und mit einem
@@ -19,7 +19,7 @@ export default function AGBPage() {
 
           <h2>SS 1 Geltungsbereich</h2>
           <p>
-            Diese Allgemeinen Geschaeftsbedingungen gelten fuer alle ueber den
+            Diese Allgemeinen Geschäftsbedingungen gelten für alle über den
             Onlineshop der Firma Seyfarth Container-Dienst geschlossenen
             Vertraege zwischen dem Betreiber und dem Kunden.
           </p>

@@ -2,7 +2,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 ARG NEXT_PUBLIC_SITE_URL
-RUN npm install --frozen-lockfile || npm install
+RUN npm ci
 COPY . .
 ARG NEXT_PUBLIC_MEDUSA_URL
 ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
