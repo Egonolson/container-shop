@@ -1,0 +1,74 @@
+# ============================================================
+# Container-Dienst Seyfarth — Own-Shop Stack
+# Dev:  hetzner-claw  — Port 8092 — seyfarth-dev.visionmakegpt.work
+# Prod: hetzner-prod  — Port 8092 — seyfarth.visionmakegpt.work
+# ============================================================
+# Production-ready Zielbild: Medusa ist nicht mehr Laufzeit-Abhängigkeit.
+# Der öffentliche Shop läuft als Next.js Anfrage-/Konfiguratorstrecke.
+# Anfragen werden serverseitig als JSONL im persistenten Docker-Volume abgelegt.
+# ============================================================
+
+networks:
+  seyfarth-net:
+    name: seyfarth-net
+    driver: bridge
+
+volumes:
+  seyfarth-request-data:
+    name: seyfarth-request-data
+
+services:
+  # --- Next.js Storefront / Anfrage-Konfigurator ---
+  seyfarth-storefront:
+    build:
+      context: ./storefront
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_MAIN_WEBSITE_URL: ${MAIN_WEBSITE_URL:-https://www.containerdienst-seyfarth.de}
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}
+    image: seyfarth-storefront:${IMAGE_TAG:-latest}
+    container_name: seyfarth-storefront
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    environment:
+      NODE_ENV: production
+      SEYFARTH_REQUEST_LOG_PATH: /app/data/shop-requests.jsonl
+    volumes:
+      - seyfarth-request-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # --- Cloudflare Tunnel (nur Prod: seyfarth.visionmakegpt.work) ---
+  # Aktivierung nur explizit mit: docker compose --profile prod up -d
+  seyfarth-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: seyfarth-tunnel
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./tunnel-config.yml:/etc/cloudflared/config.yml:ro
+      - /opt/seyfarth/tunnel-credentials.json:/etc/cloudflared/tunnel-credentials.json:ro
+    depends_on:
+      seyfarth-nginx:
+        condition: service_started
+    profiles:
+      - prod
+
+  # --- Nginx Reverse Proxy / Security Headers / Rate Limit ---
+  seyfarth-nginx:
+    image: nginx:alpine
+    container_name: seyfarth-nginx
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    ports:
+      - "8092:80"
+    volumes:
+      - ./nginx.seyfarth.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      seyfarth-storefront:
+        condition: service_started

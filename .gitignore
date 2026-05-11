@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+dist/
+.medusa/
+.next/
+postgres_data/
+redis_data/
+.DS_Store

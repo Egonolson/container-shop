@@ -1,0 +1,144 @@
+name: shop-${SHOP_NAME}
+
+services:
+  medusa:
+    build:
+      context: ./medusa
+      dockerfile: Dockerfile
+    container_name: ${SHOP_NAME}-medusa
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${SHOP_NAME}-postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://${SHOP_NAME}-redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - COOKIE_SECRET=${COOKIE_SECRET}
+      - STORE_CORS=https://${SHOP_DOMAIN}
+      - ADMIN_CORS=https://${SHOP_DOMAIN}
+      - AUTH_CORS=https://${SHOP_DOMAIN}
+    volumes:
+      - ${SHOP_NAME}_admin_build:/app/.medusa/server/public/admin
+    networks:
+      - proxy
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  storefront:
+    build:
+      context: ./storefront
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_MEDUSA_URL: https://${SHOP_DOMAIN}
+        NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${MEDUSA_PUBLISHABLE_KEY}
+    container_name: ${SHOP_NAME}-storefront
+    restart: unless-stopped
+    networks:
+      - proxy
+      - internal
+    depends_on:
+      - medusa
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:alpine
+    container_name: ${SHOP_NAME}-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${SHOP_NAME}_admin_build:/usr/share/nginx/admin:ro
+    networks:
+      - proxy
+      - internal
+    depends_on:
+      - medusa
+      - storefront
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${SHOP_NAME}-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ${SHOP_NAME}_postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${SHOP_NAME}-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - ${SHOP_NAME}_redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+networks:
+  proxy:
+    external: true
+  internal:
+    driver: bridge
+
+volumes:
+  ${SHOP_NAME}_admin_build:
+  ${SHOP_NAME}_postgres_data:
+  ${SHOP_NAME}_redis_data:
