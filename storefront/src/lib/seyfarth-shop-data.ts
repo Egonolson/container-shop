@@ -34,7 +34,7 @@ export interface ZoneLocation {
   zone: 1 | 2 | 3
 }
 
-export const PRICE_LIST_VERSION = "04/2026"
+export const REQUEST_FORM_VERSION = "seyfarth-inquiry-v1"
 
 export const containerSizes = ["3 m³", "5 m³", "7 m³", "10 m³", "12 m³", "15 m³", "20 m³", "30 m³", "40 m³", "Ich bin unsicher"]
 

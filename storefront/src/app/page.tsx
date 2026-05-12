@@ -34,7 +34,7 @@ const stats = [
   { value: "2.500+", label: "Zufriedene Kunden", icon: Users },
   { value: "18", label: "Fahrzeuge", icon: Truck },
   { value: "50+", label: "Jahre Erfahrung", icon: Star },
-  { value: "04/2026", label: "Aktuelle Preisbasis", icon: CalendarCheck },
+  { value: "Kostenlos", label: "Anfrage senden", icon: ClipboardCheck },
 ]
 
 const faqs = [

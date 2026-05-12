@@ -1,7 +1,7 @@
 import { appendFile, mkdir } from "node:fs/promises"
 import { dirname } from "node:path"
 import { NextRequest, NextResponse } from "next/server"
-import { PRICE_LIST_VERSION, containerSizes, materialItems, wasteItems, type ShopMode } from "@/lib/seyfarth-shop-data"
+import { REQUEST_FORM_VERSION, containerSizes, materialItems, wasteItems, type ShopMode } from "@/lib/seyfarth-shop-data"
 
 export const runtime = "nodejs"
 
@@ -68,7 +68,7 @@ function parseDate(value: unknown) {
 }
 
 function rejectUnexpectedTopLevelKeys(payload: Record<string, unknown>) {
-  const allowed = new Set(["priceListVersion", "mode", "intent", "location", "selection", "containerSize", "quantity", "placement", "dates", "pricing", "contact", "confirmations", "website"])
+  const allowed = new Set(["requestFormVersion", "mode", "intent", "location", "selection", "containerSize", "quantity", "placement", "dates", "pricing", "contact", "confirmations", "website"])
   return Object.keys(payload).filter((key) => !allowed.has(key))
 }
 
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
   if (!getBoolean(confirmations.privacyAccepted)) {
     return json("Bitte bestätigen Sie den Datenschutzhinweis.", 422)
   }
-  if (cleanString(confirmations.submittedNoticeVersion, 80) !== `seyfarth-anfrage-${PRICE_LIST_VERSION}`) {
+  if (cleanString(confirmations.submittedNoticeVersion, 80) !== REQUEST_FORM_VERSION) {
     return json("Bitte laden Sie das Formular neu und senden Sie die Anfrage erneut.", 422)
   }
 
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
     receivedAt,
     status: "received",
     source: "seyfarth-shop",
-    priceListVersion: PRICE_LIST_VERSION,
+    requestFormVersion: REQUEST_FORM_VERSION,
     mode,
     intent: "inquiry",
     location: {

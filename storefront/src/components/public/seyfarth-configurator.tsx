@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
-  PRICE_LIST_VERSION,
+  REQUEST_FORM_VERSION,
   ShopMode,
   PlacementType,
   containerSizes,
@@ -151,7 +151,7 @@ export function SeyfarthConfigurator() {
     setSubmitting(true)
     setError(null)
     const payload = {
-      priceListVersion: PRICE_LIST_VERSION,
+      requestFormVersion: REQUEST_FORM_VERSION,
       mode,
       intent: "inquiry",
       location: { postalCode, city, zone: zone ?? null, zoneKnown: !!zoneMatch },
@@ -162,7 +162,7 @@ export function SeyfarthConfigurator() {
       dates: { deliveryDate, pickupDate, flexibility: dateFlexibility },
       pricing: { transportNet: transportPrice, materialNet, materialTotalNet, wasteDisposalNetPerUnit: selectedWaste?.netPrice, finalByWeighing: selectedWaste?.requiresWeighing },
       contact,
-      confirmations: { privacyAccepted, submittedNoticeVersion: `seyfarth-anfrage-${PRICE_LIST_VERSION}` },
+      confirmations: { privacyAccepted, submittedNoticeVersion: REQUEST_FORM_VERSION },
     }
 
     try {
@@ -431,7 +431,7 @@ export function SeyfarthConfigurator() {
               <SidebarItem label="Bereich" value={mode ? (mode === "entsorgung" ? "Entsorgung" : mode === "baustoffe" ? "Baustoffe" : "Transport") : "noch offen"} />
               <SidebarItem label="Liefergebiet" value={zone ? `Zone ${zone}` : postalCode ? "wird geprüft" : "noch offen"} />
               <SidebarItem label="Auswahl" value={mode === "entsorgung" ? selectedWaste?.name : mode === "baustoffe" ? selectedMaterial?.name : transportDescription || "noch offen"} />
-              <SidebarItem label="Preisbasis" value={PRICE_LIST_VERSION} />
+              <SidebarItem label="Nächster Schritt" value="Seyfarth prüft persönlich" />
             </div>
             <div className="mt-6 rounded-2xl bg-white/10 p-4 text-xs leading-relaxed text-blue-100">
               <strong className="text-white">Wichtiger Hinweis:</strong> Das Absenden der Anfrage ist kostenlos. Bei Entsorgungen wird der Abfall verwogen. Seyfarth bestätigt Preis, Termin und Verfügbarkeit persönlich.
