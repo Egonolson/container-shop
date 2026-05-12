@@ -25,6 +25,7 @@ import {
   containerSizes,
   formatEuro,
   getTransportPrice,
+  getCityForPostalCode,
   lookupZone,
   materialItems,
   wasteItems,
@@ -68,6 +69,7 @@ export function SeyfarthConfigurator() {
   const [mode, setMode] = useState<ShopMode | null>(null)
   const [postalCode, setPostalCode] = useState("")
   const [city, setCity] = useState("")
+  const [autoFilledCity, setAutoFilledCity] = useState<string | null>(null)
   const [selectedWasteId, setSelectedWasteId] = useState("")
   const [selectedMaterialId, setSelectedMaterialId] = useState("")
   const [transportDescription, setTransportDescription] = useState("")
@@ -106,6 +108,23 @@ export function SeyfarthConfigurator() {
   const updateContact = (field: keyof typeof contact, value: string) => {
     setContact((current) => ({ ...current, [field]: value }))
   }
+
+  useEffect(() => {
+    const suggestedCity = getCityForPostalCode(postalCode)
+
+    if (suggestedCity && (!city.trim() || city === autoFilledCity)) {
+      setCity(suggestedCity)
+      setAutoFilledCity(suggestedCity)
+      setContact((current) => ({ ...current, city: suggestedCity }))
+      return
+    }
+
+    if (!suggestedCity && autoFilledCity && city === autoFilledCity) {
+      setCity("")
+      setAutoFilledCity(null)
+      setContact((current) => ({ ...current, city: "" }))
+    }
+  }, [autoFilledCity, city, postalCode])
 
   const goNext = () => {
     const next = steps[stepIndex(step) + 1]?.key
@@ -268,8 +287,8 @@ export function SeyfarthConfigurator() {
               {step === "location" && (
                 <StepBlock title="Wo soll der Container stehen oder Material geliefert werden?" intro="Mit PLZ und Ort prüfen wir, ob Ihr Standort im Liefergebiet liegt und welche Transportzone gilt.">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <Field label="Postleitzahl"><input value={postalCode} onChange={(e) => { setPostalCode(e.target.value); updateContact("postalCode", e.target.value) }} className="sey-input" placeholder="z. B. 04639" /></Field>
-                    <Field label="Ort"><input value={city} onChange={(e) => { setCity(e.target.value); updateContact("city", e.target.value) }} className="sey-input" placeholder="z. B. Ponitz" /></Field>
+                    <Field label="Postleitzahl"><input value={postalCode} onChange={(e) => { setPostalCode(e.target.value); updateContact("postalCode", e.target.value) }} className="sey-input" inputMode="numeric" autoComplete="postal-code" placeholder="z. B. 04639" /></Field>
+                    <Field label="Ort"><input value={city} onChange={(e) => { setCity(e.target.value); setAutoFilledCity(null); updateContact("city", e.target.value) }} className="sey-input" autoComplete="address-level2" placeholder="wird nach PLZ automatisch ergänzt" /></Field>
                   </div>
                   {zoneMatch && (
                     <Notice tone="success">

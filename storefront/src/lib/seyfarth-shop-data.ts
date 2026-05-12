@@ -87,6 +87,17 @@ export function formatEuro(value: number) {
   return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value)
 }
 
+export function getCityForPostalCode(postalCode: string) {
+  const normalizedPostalCode = postalCode.trim()
+  if (normalizedPostalCode.length !== 5) return null
+
+  const cities = Array.from(
+    new Set(zoneLocations.filter((entry) => entry.postalCode === normalizedPostalCode).map((entry) => entry.city)),
+  )
+
+  return cities.length === 1 ? cities[0] : null
+}
+
 export function lookupZone(postalCode: string, city?: string) {
   const normalizedCity = city?.trim().toLowerCase()
   return zoneLocations.find((entry) =>
