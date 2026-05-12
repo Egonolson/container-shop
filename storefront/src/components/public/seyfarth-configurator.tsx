@@ -14,7 +14,6 @@ import {
   Package,
   Phone,
   Recycle,
-  ShieldAlert,
   Truck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -316,13 +315,12 @@ export function SeyfarthConfigurator() {
                           <div><p className="font-bold text-seyfarth-navy">{item.name}</p><p className="text-xs text-zinc-500">Abfallschlüssel: ASN {item.avv} · Entsorgung nach Gewicht: {formatEuro(item.netPrice)} netto/{item.unit}</p></div>
                           <div className="flex items-center gap-2">
                             {selectedWasteId === item.id && <span className="inline-flex items-center gap-1 rounded-full bg-seyfarth-blue px-2 py-1 text-xs font-bold text-white"><Check className="h-3 w-3" />Ausgewählt</span>}
-                            {item.isHazardous && <ShieldAlert className="h-5 w-5 text-red-500" />}
                           </div>
                         </div>
                       </button>
                     ))}
                   </div>
-                  {selectedWaste?.notice && <Notice tone="danger">{selectedWaste.notice} Verpackung/Hinweis: {selectedWaste.packaging}.</Notice>}
+                  {selectedWaste?.notice && <Notice tone="warning">{selectedWaste.notice} Verpackung/Hinweis: {selectedWaste.packaging}.</Notice>}
                 </StepBlock>
               )}
 
