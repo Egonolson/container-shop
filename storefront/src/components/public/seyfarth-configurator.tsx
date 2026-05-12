@@ -271,9 +271,11 @@ export function SeyfarthConfigurator() {
                     <Field label="Postleitzahl"><input value={postalCode} onChange={(e) => { setPostalCode(e.target.value); updateContact("postalCode", e.target.value) }} className="sey-input" placeholder="z. B. 04639" /></Field>
                     <Field label="Ort"><input value={city} onChange={(e) => { setCity(e.target.value); updateContact("city", e.target.value) }} className="sey-input" placeholder="z. B. Ponitz" /></Field>
                   </div>
-                  <Notice tone={zoneMatch ? "success" : "warning"}>
-                    {zoneMatch ? <>Gute Nachricht: {zoneMatch.city} liegt in unserem Liefergebiet, Zone {zoneMatch.zone}. Den genauen Transportanteil berücksichtigen wir in Ihrer Anfrage.</> : <>Wir konnten die Zone noch nicht automatisch zuordnen. Senden Sie Ihre Anfrage trotzdem ab – Seyfarth prüft die Liefermöglichkeit persönlich.</>}
-                  </Notice>
+                  {zoneMatch && (
+                    <Notice tone="success">
+                      Gute Nachricht: {zoneMatch.city} liegt in unserem Liefergebiet, Zone {zoneMatch.zone}. Den genauen Transportanteil berücksichtigen wir in Ihrer Anfrage.
+                    </Notice>
+                  )}
                 </StepBlock>
               )}
 
