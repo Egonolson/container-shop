@@ -236,12 +236,12 @@ export function SeyfarthConfigurator() {
     <section id="katalog" className="bg-white py-24">
       <div className="mx-auto max-w-[1180px] px-4 md:px-6">
         <div className="mb-10 text-center">
-          <p className="sey-brand-badge mb-4">Online-Konfigurator</p>
+          <p className="sey-brand-badge mb-4">Online anfragen</p>
           <h2 className="font-headline text-4xl font-extrabold tracking-[-0.035em] text-seyfarth-navy md:text-6xl">
-            Container, Baustoffe oder Transport <span className="text-seyfarth-yellow">anfragen</span>
+            Container oder Baustoffe <span className="text-seyfarth-yellow">anfragen</span>
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-zinc-600">
-            Wählen Sie Leistung, Lieferort, Details und Terminwunsch. Seyfarth prüft Preis, Verfügbarkeit und wichtige Hinweise persönlich, bevor Kosten entstehen.
+            Sagen Sie uns kurz, was Sie entsorgen oder liefern lassen möchten. Wir prüfen Ihre Angaben persönlich und melden uns mit Preis, Termin und den nächsten Schritten zurück.
           </p>
         </div>
 
@@ -274,7 +274,7 @@ export function SeyfarthConfigurator() {
 
             <div className="rounded-[28px] bg-white p-5 shadow-[0_20px_60px_rgba(7,31,63,0.08)] md:p-8">
               {step === "mode" && (
-                <StepBlock title="Was möchten Sie anfragen?" intro="Wählen Sie zuerst aus, worum es geht. Danach erfassen wir Ort, Auswahl, Größe, Stellplatz und Terminwunsch.">
+                <StepBlock title="Was möchten Sie anfragen?" intro="Wählen Sie zuerst, ob es um Entsorgung, Baustoffe oder Transport geht. Danach fragen wir nur die Angaben ab, die wir für eine verlässliche Rückmeldung brauchen.">
                   <div className="grid gap-4 md:grid-cols-3">
                     <ChoiceCard active={mode === "entsorgung"} icon={Recycle} title="Entsorgung" text="Container für Bauschutt, Sperrmüll, Holz, Grünschnitt und weitere Abfälle anfragen." onClick={() => setMode("entsorgung")} />
                     <ChoiceCard active={mode === "baustoffe"} icon={Package} title="Baustoffe" text="Schüttgut oder Recyclingmaterial liefern lassen – Preis abhängig von Menge und Lieferort." onClick={() => setMode("baustoffe")} />

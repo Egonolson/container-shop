@@ -27,7 +27,7 @@ const steps = [
   { icon: Package, title: "Leistung wählen", text: "Entsorgung, Baustoffe oder Transport" },
   { icon: CalendarCheck, title: "Zone prüfen", text: "PLZ und Ort bestimmen den Lieferanteil" },
   { icon: Truck, title: "Details angeben", text: "Containergröße, Stellplatz und Terminwunsch" },
-  { icon: ClipboardCheck, title: "Wir prüfen", text: "Persönliche Bestätigung statt falschem Festpreis" },
+  { icon: ClipboardCheck, title: "Wir prüfen", text: "Geprüfte Rückmeldung statt ungenauer Schätzung" },
 ]
 
 const stats = [
@@ -121,17 +121,17 @@ export default function HomePage() {
               <span className="text-seyfarth-yellow">Recycling.</span>
             </h1>
             <p className="mt-6 text-2xl font-semibold text-white md:text-3xl">
-              Container, Baustoffe und Transport einfach online anfragen.
+              Container einfach online anfragen.
             </p>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-blue-100/80">
-              Modernes Anfrageportal im Seyfarth-Design: Wählen Sie Ort, Abfallart oder Material, Containergröße und Wunschtermin. Seyfarth prüft Preis, Verfügbarkeit und wichtige Hinweise persönlich. Durch das Absenden der Anfrage entstehen keine Kosten.
+              Ob Bauschutt, Sperrmüll, Grünschnitt, Holz oder Baustoffe: Stellen Sie Ihre Anfrage in wenigen Schritten. Wir prüfen Preis, Termin und Verfügbarkeit persönlich und melden uns mit allen wichtigen Hinweisen zurück. Die Anfrage ist kostenlos und unverbindlich.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <Button
                 className="rounded-lg bg-[linear-gradient(135deg,#3A5BFF,#1F7BFF)] px-8 py-6 text-base font-bold text-white shadow-[0_16px_32px_rgba(31,123,255,0.35)] hover:bg-white hover:text-seyfarth-navy"
                 onClick={() => document.getElementById("katalog")?.scrollIntoView({ behavior: "smooth" })}
               >
-                Anfrage starten <ArrowDown className="ml-2 h-4 w-4" />
+                Container anfragen <ArrowDown className="ml-2 h-4 w-4" />
               </Button>
               <Button asChild variant="outline" className="rounded-lg border-white/20 bg-[#2D2D2D] px-8 py-6 text-base font-semibold text-white hover:bg-white/10">
                 <a href="tel:03449155200"><Phone className="mr-2 h-4 w-4" /> Beratung anrufen: 034491 5520-0</a>
@@ -156,15 +156,15 @@ export default function HomePage() {
       <section className="bg-[#F3F7FB] py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-12 text-center">
-            <p className="sey-brand-badge mb-4">Container-Konfigurator</p>
-            <h2 className="font-headline text-4xl font-extrabold tracking-[-0.035em] text-seyfarth-navy md:text-6xl">Finden Sie die <span className="text-seyfarth-yellow">passende</span> Lösung</h2>
-            <p className="mt-3 text-zinc-500">Wir berücksichtigen Lieferort, Abfallart, Containergröße, Stellplatz und Terminwunsch. So erhalten Sie eine realistische Rückmeldung statt eines pauschalen Onlinepreises.</p>
+            <p className="sey-brand-badge mb-4">Container anfragen</p>
+            <h2 className="font-headline text-4xl font-extrabold tracking-[-0.035em] text-seyfarth-navy md:text-6xl">Welchen <span className="text-seyfarth-yellow">Container</span> brauchen Sie?</h2>
+            <p className="mt-3 text-zinc-500">Damit wir Ihnen ein realistisches Angebot machen können, fragen wir nur die wichtigsten Angaben ab: Ort, Abfallart, Containergröße, Stellplatz und Wunschtermin.</p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
               { icon: Truck, title: "Lieferort eingeben", text: "Ihre PLZ entscheidet mit, welche Transportkosten anfallen.", color: "bg-seyfarth-blue" },
               { icon: Recycle, title: "Preis nach Gewicht fair berechnet", text: "Bei Entsorgung wird der Abfall verwogen. Sie zahlen die Entsorgung nach tatsächlichem Gewicht – nicht nach Schätzung.", color: "bg-seyfarth-navy" },
-              { icon: ShieldCheck, title: "Sonderfälle sicher klären", text: "Bei Asbest, Mineralwolle, Dachpappe oder öffentlicher Stellfläche prüfen wir vorab, was erlaubt ist und welche Hinweise gelten.", color: "bg-seyfarth-orange" },
+              { icon: ShieldCheck, title: "Sonderfälle vorab klären", text: "Bei Asbest, Dämmwolle, Dachpappe oder öffentlicher Stellfläche prüfen wir vorab, was möglich ist und worauf Sie achten müssen.", color: "bg-seyfarth-orange" },
             ].map((item) => (
               <div key={item.title} className="group overflow-hidden rounded-[28px] border border-white bg-white shadow-[0_20px_60px_rgba(7,31,63,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_80px_rgba(7,31,63,0.14)]">
                 <div className={`h-1.5 ${item.color}`} />
@@ -204,7 +204,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-16 text-center">
             <h2 className="font-headline text-3xl font-extrabold tracking-tight text-seyfarth-navy md:text-4xl">So funktioniert&apos;s</h2>
-            <p className="mt-3 text-zinc-500">In vier Schritten zur geprüften Container- oder Baustoffanfrage</p>
+            <p className="mt-3 text-zinc-500">In vier einfachen Schritten zur unverbindlichen Anfrage</p>
           </div>
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((item, index) => (
@@ -246,7 +246,7 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-7xl px-6 text-center">
           <ShieldCheck className="mx-auto mb-6 h-14 w-14 text-seyfarth-yellow" strokeWidth={1.5} />
           <h2 className="mb-4 font-headline text-3xl font-extrabold tracking-tight text-white md:text-5xl">Sie sind unsicher bei Abfallart oder Größe?</h2>
-          <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-blue-100/80">Wählen Sie im Konfigurator „Ich bin unsicher“ oder rufen Sie direkt an. Seyfarth prüft Ihre Angaben persönlich.</p>
+          <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-blue-100/80">Wenn Sie nicht genau wissen, welche Größe oder Abfallart passt: Rufen Sie uns an oder wählen Sie in der Anfrage „Ich bin unsicher“. Wir prüfen das persönlich mit Ihnen.</p>
           <Button asChild className="rounded-xl bg-seyfarth-yellow px-8 py-6 text-base font-bold text-seyfarth-navy hover:bg-white"><a href="tel:03449155200"><Phone className="mr-2 h-4 w-4" /> Beratung anrufen: 034491 5520-0</a></Button>
         </div>
       </section>
