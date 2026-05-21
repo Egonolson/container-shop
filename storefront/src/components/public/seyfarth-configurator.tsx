@@ -234,11 +234,11 @@ export function SeyfarthConfigurator() {
 
   return (
     <section id="katalog" className="bg-white py-24">
-      <div className="mx-auto max-w-7xl px-4 md:px-6">
+      <div className="mx-auto max-w-[1180px] px-4 md:px-6">
         <div className="mb-10 text-center">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-seyfarth-blue">Online-Konfigurator</p>
-          <h2 className="font-headline text-3xl font-extrabold tracking-tight text-seyfarth-navy md:text-5xl">
-            Container, Baustoffe oder Transport <span className="text-seyfarth-yellow italic">anfragen</span>
+          <p className="sey-brand-badge mb-4">Online-Konfigurator</p>
+          <h2 className="font-headline text-4xl font-extrabold tracking-[-0.035em] text-seyfarth-navy md:text-6xl">
+            Container, Baustoffe oder Transport <span className="text-seyfarth-yellow">anfragen</span>
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-zinc-600">
             Wählen Sie Leistung, Lieferort, Details und Terminwunsch. Seyfarth prüft Preis, Verfügbarkeit und wichtige Hinweise persönlich, bevor Kosten entstehen.
@@ -246,7 +246,7 @@ export function SeyfarthConfigurator() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-          <form onSubmit={submit} className="rounded-[32px] border border-zinc-100 bg-zinc-50/60 p-4 shadow-sm md:p-6">
+          <form onSubmit={submit} className="rounded-[32px] border border-[#E2E8F0] bg-[#F3F7FB] p-4 shadow-[0_24px_70px_rgba(7,31,63,0.10)] md:p-6">
             <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
               {steps.map((item, index) => {
                 const active = item.key === step
@@ -259,8 +259,8 @@ export function SeyfarthConfigurator() {
                     disabled={!active && !completed}
                     aria-current={active ? "step" : undefined}
                     className={cx(
-                      "flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue disabled:cursor-not-allowed",
-                      active && "border-seyfarth-blue bg-seyfarth-blue text-white",
+                      "flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue disabled:cursor-not-allowed",
+                      active && "border-seyfarth-blue bg-seyfarth-blue text-white shadow-[0_12px_28px_rgba(31,123,255,0.22)]",
                       completed && !active && "border-seyfarth-blue/30 bg-white text-seyfarth-blue",
                       !active && !completed && "border-zinc-200 bg-white text-zinc-400",
                     )}
@@ -272,7 +272,7 @@ export function SeyfarthConfigurator() {
               })}
             </div>
 
-            <div className="rounded-[28px] bg-white p-5 shadow-sm md:p-8">
+            <div className="rounded-[28px] bg-white p-5 shadow-[0_20px_60px_rgba(7,31,63,0.08)] md:p-8">
               {step === "mode" && (
                 <StepBlock title="Was möchten Sie anfragen?" intro="Wählen Sie zuerst aus, worum es geht. Danach erfassen wir Ort, Auswahl, Größe, Stellplatz und Terminwunsch.">
                   <div className="grid gap-4 md:grid-cols-3">

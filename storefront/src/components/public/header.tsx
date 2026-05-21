@@ -12,24 +12,24 @@ export function Header() {
 
   return (
     <header className="seyfarth-public-header sticky top-0 z-40 bg-transparent px-4 pt-4">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between rounded-[28px] border border-white/80 bg-white/95 px-5 shadow-[0_18px_45px_rgba(7,27,59,0.14)] backdrop-blur md:px-6">
+      <div className="mx-auto flex h-20 max-w-[1180px] items-center justify-between rounded-2xl border border-white/80 bg-white/95 px-5 shadow-[0_18px_45px_rgba(7,31,63,0.18)] backdrop-blur md:h-[88px] md:px-7">
         <Link href="/" className="shrink-0">
-          <Image src="/logo-seyfarth.png" alt="Seyfarth Container-Dienst" width={280} height={93} className="h-10 w-auto" priority />
+          <Image src="/logo-seyfarth.png" alt="Seyfarth Container-Dienst GmbH" width={280} height={93} className="h-11 w-auto md:h-12" priority />
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          <a href={MAIN_WEBSITE_URL} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-xs text-zinc-500 transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">
-            <span>← Zur Hauptseite</span>
+        <nav className="hidden items-center gap-6 md:flex lg:gap-8">
+          <Link href="/#katalog" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">Containerdienst</Link>
+          <Link href="/#entsorgung" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">Entsorgung</Link>
+          <a href={MAIN_WEBSITE_URL} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">
+            <span>Recyclinghof</span>
             <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
           </a>
-          <Link href="/#katalog" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">Anfrage</Link>
-          <Link href="/#entsorgung" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">Entsorgung</Link>
-          <a href="tel:03449155200" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">034491 5520-0</a>
+          <a href="tel:03449155200" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">Kontakt</a>
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button asChild className="hidden rounded-xl bg-seyfarth-blue px-5 text-sm text-white hover:bg-seyfarth-navy sm:inline-flex">
-            <Link href="/#katalog">Anfrage starten</Link>
+          <Button asChild className="hidden rounded-[14px] bg-seyfarth-blue px-5 py-6 text-sm font-bold text-white shadow-[0_12px_28px_rgba(31,123,255,0.28)] hover:bg-seyfarth-navy sm:inline-flex">
+            <Link href="/#katalog">Container anfragen</Link>
           </Button>
           <button className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-seyfarth-navy hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue md:hidden" aria-label="Menü öffnen oder schließen" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

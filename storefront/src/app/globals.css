@@ -20,12 +20,15 @@
   --font-mono: var(--font-geist-mono);
   --font-headline: 'Albert Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 
-  /* Seyfarth CI Colors */
-  --color-seyfarth-blue: #2579F0;
-  --color-seyfarth-blue-light: #2579F0/10%;
-  --color-seyfarth-navy: #071B3B;
-  --color-seyfarth-yellow: #FEC43E;
-  --color-seyfarth-orange: #FEC43E;
+  /* Seyfarth CI Colors – angelehnt an die Hauptwebseite */
+  --color-seyfarth-blue: #1F7BFF;
+  --color-seyfarth-blue-light: #EAF2FF;
+  --color-seyfarth-navy: #071F3F;
+  --color-seyfarth-navy-dark: #061A35;
+  --color-seyfarth-yellow: #FFC43D;
+  --color-seyfarth-orange: #FFB800;
+  --color-seyfarth-surface: #F3F7FB;
+  --color-seyfarth-muted: #5F6F85;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -150,5 +153,26 @@
 @layer components {
   .sey-input {
     @apply w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-seyfarth-navy shadow-sm outline-none transition focus:border-seyfarth-blue focus:ring-4 focus:ring-seyfarth-blue/10 disabled:bg-zinc-100 disabled:text-zinc-400;
+  }
+
+  .sey-brand-shell {
+    background:
+      radial-gradient(circle at 82% 12%, rgba(255, 196, 61, 0.22), transparent 26rem),
+      radial-gradient(circle at 8% 72%, rgba(31, 123, 255, 0.18), transparent 30rem),
+      #000;
+  }
+
+  .sey-brand-card {
+    border-radius: 28px;
+    background: #fff;
+    box-shadow: 0 20px 60px rgba(7, 31, 63, 0.08);
+  }
+
+  .sey-brand-badge {
+    @apply inline-flex items-center rounded-full border border-[#CFE0FF] bg-[#EAF2FF] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-seyfarth-blue;
+  }
+
+  .sey-yellow-icon {
+    @apply inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-seyfarth-yellow text-seyfarth-navy shadow-sm;
   }
 }
