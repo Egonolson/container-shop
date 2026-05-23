@@ -21,10 +21,10 @@ export function CookieBanner() {
   return (
     <div
       data-cookie-banner
-      className="fixed bottom-0 inset-x-0 z-[65] p-3 md:p-4 bg-white border-t border-zinc-200 shadow-lg"
+      className="fixed bottom-4 left-4 right-4 z-[65] md:left-auto md:right-6 md:max-w-md"
     >
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <p className="text-xs sm:text-sm text-zinc-600 flex-1 leading-relaxed">
+      <div className="rounded-2xl border border-zinc-200 bg-white/95 p-4 shadow-[0_20px_60px_rgba(7,31,63,0.18)] backdrop-blur">
+        <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
           Diese Website verwendet ausschließlich technisch notwendige Cookies für die Funktion des Shops.{" "}
           <Link href="/datenschutz" className="text-seyfarth-blue underline hover:text-seyfarth-navy">
             Datenschutzerklärung
@@ -32,7 +32,7 @@ export function CookieBanner() {
         </p>
         <button
           onClick={accept}
-          className="self-end sm:self-auto px-5 py-1.5 bg-seyfarth-navy text-white text-sm font-medium rounded-full hover:bg-seyfarth-blue transition-colors shrink-0"
+          className="mt-3 w-full rounded-full bg-seyfarth-navy px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-seyfarth-blue sm:w-auto"
         >
           Verstanden
         </button>

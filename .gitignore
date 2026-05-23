@@ -7,3 +7,4 @@ dist/
 postgres_data/
 redis_data/
 .DS_Store
+_deploy_backups/
