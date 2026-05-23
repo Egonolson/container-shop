@@ -9,3 +9,7 @@ test("CSP allows Cloudflare Insights script without opening script-src broadly",
   assert.match(cspLine, /script-src[^;]*https:\/\/static\.cloudflareinsights\.com/)
   assert.doesNotMatch(cspLine, /script-src[^;]*\*/)
 })
+
+test("nginx blocks exact legacy embed route", () => {
+  assert.match(nginxConfig, /location = \/embed \{ return 404; \}/)
+})
