@@ -1,7 +1,7 @@
-import { appendFile, mkdir } from "node:fs/promises"
-import { dirname } from "node:path"
 import { NextRequest, NextResponse } from "next/server"
 import { REQUEST_FORM_VERSION, containerSizes, materialItems, wasteItems, type ShopMode } from "@/lib/seyfarth-shop-data"
+import { appendShopRequest, getRequestLogPath, type ShopRequestEntry } from "@/lib/seyfarth-request-store"
+import { sendShopRequestNotification } from "@/lib/seyfarth-mailer"
 
 export const runtime = "nodejs"
 
@@ -72,10 +72,8 @@ function rejectUnexpectedTopLevelKeys(payload: Record<string, unknown>) {
   return Object.keys(payload).filter((key) => !allowed.has(key))
 }
 
-async function persistRequest(entry: Record<string, unknown>) {
-  const filePath = process.env.SEYFARTH_REQUEST_LOG_PATH || "/tmp/seyfarth-shop-requests.jsonl"
-  await mkdir(dirname(filePath), { recursive: true })
-  await appendFile(filePath, `${JSON.stringify(entry)}\n`, { encoding: "utf8", mode: 0o600 })
+async function persistRequest(entry: ShopRequestEntry) {
+  await appendShopRequest(getRequestLogPath(), entry)
 }
 
 export async function POST(request: NextRequest) {
@@ -235,12 +233,15 @@ export async function POST(request: NextRequest) {
     return json("Die Anfrage konnte technisch nicht gespeichert werden. Bitte rufen Sie uns an oder versuchen Sie es später erneut.", 503)
   }
 
+  const notification = await sendShopRequestNotification(entry).catch(() => ({ sent: false, skipped: true }))
+
   return NextResponse.json({
     requestId,
     status: "received",
     mode,
     intent: "inquiry",
     zoneKnown: getBoolean(location.zoneKnown),
+    notificationSent: notification.sent === true,
     message: message ? "Nachricht wurde aufgenommen." : "Anfrage wurde aufgenommen.",
   })
 }

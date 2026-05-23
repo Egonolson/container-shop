@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run validate:content && next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "validate:content": "node scripts/validate-help-content.mjs",
+    "test:backoffice": "tsx --test src/lib/seyfarth-backoffice.test.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
@@ -14,6 +16,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.563.0",
     "next": "^16.2.6",
+    "nodemailer": "^8.0.7",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -22,10 +25,12 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5"
   }

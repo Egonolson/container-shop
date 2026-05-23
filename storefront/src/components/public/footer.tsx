@@ -3,14 +3,13 @@ import { Phone, Mail, MapPin, ShieldCheck } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="bg-seyfarth-navy text-blue-200">
-      <div className="max-w-7xl mx-auto px-6 py-16">
+    <footer id="kontakt" className="scroll-mt-32 bg-seyfarth-navy text-blue-200">
+      <div className="mx-auto max-w-[1180px] px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Branding */}
           <div className="md:col-span-1 space-y-4">
-            <div>
-              <h2 className="font-headline text-xl text-white italic">SEYFARTH</h2>
-              <p className="text-xs text-blue-300 tracking-widest uppercase mt-0.5">Container-Dienst</p>
+            <div className="rounded-2xl bg-white p-4 shadow-lg shadow-black/10">
+              <img src="/logo-seyfarth.png" alt="Seyfarth Container-Dienst GmbH" className="h-12 w-auto" />
             </div>
             <p className="text-sm text-blue-300/70 leading-relaxed">
               Ihr zuverlässiger Partner für Containerservice und fachgerechte Entsorgung seit über 50 Jahren.

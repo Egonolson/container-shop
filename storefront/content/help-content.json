@@ -1,0 +1,259 @@
+{
+  "version": "seyfarth-help-v1",
+  "updatedAt": "2026-05-12",
+  "hero": {
+    "title": "Container bestellen und Abfälle richtig entsorgen",
+    "intro": "Hier finden Sie kurze Antworten zu Containergröße, Abfallart, Stellplatz, Befüllung und Sonderfällen. Wenn etwas unklar ist, prüft Seyfarth Ihre Anfrage persönlich, bevor Kosten entstehen.",
+    "tldr": "Container anfragen, Abfallart möglichst genau beschreiben, Stellplatz klären und bei Asbest, Mineralwolle, teerhaltiger Dachpappe oder unbekannten Materialien lieber kurz abstimmen. Seyfarth behandelt unklare Fälle als Anfrage und meldet sich mit einer passenden Lösung."
+  },
+  "noticeLinks": [
+    {
+      "slug": "gefaehrliche-stoffe",
+      "label": "gefährlichen Stoffen"
+    },
+    {
+      "slug": "verpackung-befuellung",
+      "label": "Verpackung und Befüllung"
+    },
+    {
+      "slug": "annahmebedingungen",
+      "label": "Annahmebedingungen"
+    }
+  ],
+  "topics": [
+    {
+      "slug": "gefaehrliche-stoffe",
+      "title": "Gefährliche Stoffe und Klärungsfälle",
+      "summary": "Einige Materialien brauchen vor der Annahme eine persönliche Prüfung. Das betrifft besonders Asbest, Mineralwolle/KMF, teerhaltige Dachpappe, belasteten Boden, Farben, Lacke, Chemikalien, Batterien und Leuchtmittel.",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Sie müssen Sonderfälle nicht selbst abschließend bewerten. Beschreiben Sie das Material möglichst genau oder senden Sie Fotos mit. Seyfarth prüft, welcher Entsorgungsweg passt und ob besondere Verpackung oder getrennte Sammlung nötig ist."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Asbest und asbesthaltige Baustoffe nur nach Abstimmung und fachgerechter Verpackung",
+            "Mineralwolle/KMF staubdicht in geeigneten Säcken oder Big Bags bereitstellen",
+            "Teerhaltige Dachpappe und belastete Stoffe nicht mit normalem Bauschutt mischen",
+            "Elektrogeräte, Batterien, Flüssigkeiten und Chemikalien vorab anfragen"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Gerade bei älteren Gebäuden ist oft nicht sofort erkennbar, ob Materialien belastet sind. Typische Beispiele sind Eternitplatten, asbestverdächtige Baustoffe, alte Dämmstoffe, Mineralwolle/KMF, teerhaltige Dachpappe, belasteter Boden, Farben, Lacke oder Chemikalien. Entsorgen Sie solche Stoffe nicht ungeprüft im Bauschutt- oder Baumischabfall-Container, sondern beschreiben Sie den Fall in Ihrer Anfrage möglichst genau."
+        }
+      ]
+    },
+    {
+      "slug": "verpackung-befuellung",
+      "title": "Verpackung, Befüllung und sichere Übergabe",
+      "summary": "Eine saubere Trennung und passende Verpackung hilft, Rückfragen, Nachsortierung und Zusatzaufwand zu vermeiden.",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Container dürfen nur bis zur zulässigen Füllhöhe beladen werden. Nichts sollte über die Containerkante hinausragen, damit Transport und Ladungssicherung möglich bleiben."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Abfälle möglichst sortenrein sammeln",
+            "Staubende oder faserhaltige Materialien dicht verpacken",
+            "Schwere mineralische Stoffe nicht mit leichten Mischabfällen vermengen",
+            "Bei Unsicherheit vor der Befüllung kurz abstimmen"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "annahmebedingungen",
+      "title": "Annahmebedingungen und persönliche Prüfung",
+      "summary": "Die Anfrage ist kostenlos. Seyfarth bestätigt Preis, Termin und Verfügbarkeit erst nach persönlicher Prüfung der Angaben.",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Bei vielen Entsorgungen hängt der endgültige Preis vom tatsächlichen Gewicht und von der korrekten Abfallart ab. Deshalb wird die Anfrage vorab geprüft und bei Entsorgungen nach Verwiegung abgerechnet."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Adresse, Abfallart, Menge und Stellplatz möglichst vollständig angeben",
+            "Unklare Stoffe werden nicht automatisch bestellt, sondern als Anfrage geprüft",
+            "Öffentliche Stellflächen können Genehmigungen erfordern",
+            "Seyfarth meldet sich zur Bestätigung von Preis, Termin und Verfügbarkeit"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "oeffentliche-stellflaeche",
+      "title": "Container auf öffentlicher Fläche",
+      "summary": "Wenn der Container auf Straße, Gehweg oder Parkfläche stehen soll, kann eine Genehmigung nötig sein.",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Geben Sie im Konfigurator an, wenn kein Privatgrundstück verfügbar ist. Seyfarth klärt mit Ihnen, welche nächsten Schritte sinnvoll sind und welche Angaben für die Aufstellung benötigt werden."
+        }
+      ]
+    },
+    {
+      "slug": "bauschutt",
+      "title": "Bauschutt richtig entsorgen",
+      "summary": "Bauschutt ist überwiegend mineralisch, zum Beispiel Beton, Ziegel, Fliesen, Keramik, Naturstein oder Mörtelreste. Entscheidend ist eine saubere Trennung von Holz, Kunststoff, Dämmung, Gipskarton, Erde und gefährlichen Stoffen.",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Bauschutt entsteht vor allem bei Abbruch-, Sanierungs- und Renovierungsarbeiten. Gemeint sind mineralische, nicht brennbare Baustoffe wie Beton, Ziegel, Fliesen, Keramik, Naturstein, Mauerwerksreste oder Mörtel. Je sortenreiner der Bauschutt bleibt, desto besser kann er fachgerecht verwertet oder entsorgt werden."
+        },
+        {
+          "type": "paragraph",
+          "text": "Typischerweise geeignet sind Betonbruch, Ziegel, Dachziegel, Fliesen, Keramik, Waschbecken oder Toiletten aus Keramik, Mauerwerksreste, mineralischer Putz und Mörtel. Kleine Anhaftungen oder bewehrter Beton sollten in der Anfrage beschrieben werden, damit Seyfarth die Annahme persönlich prüfen kann."
+        },
+        {
+          "type": "list",
+          "items": [
+            "In reinen Bauschutt gehören überwiegend mineralische Stoffe: Beton, Ziegel, Fliesen, Keramik, Mauerwerk, Naturstein, Putz und Mörtel.",
+            "Nicht in reinen Bauschutt gehören Holz, Kunststoff, Folien, Tapeten, Dämmstoffe, Gipskarton, Kabel, Verpackungen, Erde, Restmüll, Farben, Lacke oder Chemikalien.",
+            "Asbest, Eternit, Mineralwolle/KMF, teerhaltige Dachpappe, belasteter Boden und andere gefährliche Stoffe müssen vorab gesondert geklärt werden.",
+            "Porenbeton/Ytong, Schamottsteine, Kaminabbruch, große Metallanteile oder unbekannte Materialien bitte ausdrücklich in der Anfrage nennen."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Wenn bei einer Renovierung neben Fliesen, Mörtel oder Beton auch Holz, Folien, Tapetenreste, Kunststoffe oder Verpackungen anfallen, ist Baumischabfall oft die passendere Kategorie. Reiner Bauschutt lohnt sich vor allem dann, wenn mineralische Stoffe sauber getrennt gesammelt werden können."
+        },
+        {
+          "type": "paragraph",
+          "text": "Die passende Containergröße hängt von Menge, Gewicht und Material ab. Bei Badumbau, Küchenumbau, Wanddurchbruch, Fliesenarbeiten oder kleineren Abrissarbeiten kann schnell mehr Gewicht entstehen, als das Volumen vermuten lässt. Beschreiben Sie Ihr Vorhaben möglichst konkret, wenn Sie die Menge nur grob einschätzen können."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Mehrkosten entstehen häufig durch falsche Abfallart, Fehlbefüllung, Überladung oder ungeklärte Sonderstoffe.",
+            "Füllen Sie den Container nur bis zur zulässigen Füllhöhe und halten Sie schwere mineralische Stoffe getrennt von leichten Mischabfällen.",
+            "Senden Sie bei Unsicherheit Fotos oder eine kurze Materialbeschreibung mit, damit Seyfarth die richtige Entsorgung empfehlen kann.",
+            "Sauber getrennter mineralischer Bauschutt kann häufig aufbereitet und als Recyclingbaustoff weiterverwendet werden."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "baumischabfall",
+      "title": "Baumischabfall und Renovierungsabfälle",
+      "summary": "Baumischabfall umfasst gemischte Bau- und Renovierungsabfälle wie Holzreste, Folien, Kunststoffe, Tapeten, Verpackungen oder leichte Baustellenabfälle. Gefährliche Stoffe und große Mengen schwerer mineralischer Abfälle müssen vorher geklärt werden.",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Baumischabfall ist sinnvoll, wenn bei Renovierung, Umbau, Entrümpelung oder Rückbau verschiedene nicht gefährliche Baustellenabfälle zusammenkommen und eine sortenreine Trennung vor Ort nicht möglich ist."
+        },
+        {
+          "type": "list",
+          "items": [
+            "Typische Beispiele sind Holzreste, Kunststoffe, Folien, Tapetenreste, leere Verpackungen, Kabelreste, kleinere Metallteile und leichte Renovierungsabfälle.",
+            "Nicht hinein gehören Asbest, Mineralwolle/KMF, teerhaltige Dachpappe, Chemikalien, Farben, Lacke, Batterien, Leuchtmittel oder andere gefährliche Stoffe.",
+            "Sehr schwere mineralische Stoffe, Erde, Boden oder größere Mengen reiner Bauschutt sollten nicht ungeprüft mit leichten Mischabfällen vermengt werden.",
+            "Wenn Sie unsicher sind, welche Kategorie passt, beschreiben Sie die Materialien in der Anfrage. Seyfarth prüft die Abfallart persönlich."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Der wichtigste Unterschied: Bauschutt ist überwiegend mineralisch, Baumischabfall ist gemischt. Je sauberer getrennt wird, desto einfacher lassen sich Annahme, Verwertung und mögliche Zusatzkosten einschätzen."
+        }
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Welchen Container brauche ich für mein Projekt?",
+      "answer": "Das hängt von Abfallart, Menge, Gewicht und Stellplatz ab. Beschreiben Sie Ihr Vorhaben im Konfigurator. Seyfarth empfiehlt anschließend eine passende Containergröße oder meldet sich mit Rückfragen."
+    },
+    {
+      "question": "Welche Containergröße ist die richtige?",
+      "answer": "Für kleine Renovierungen reichen oft kleinere Container, bei Baustellen oder Entrümpelungen kann mehr Volumen sinnvoll sein. Wenn Sie unsicher sind, wählen Sie „Ich bin unsicher“ und lassen Seyfarth die Größe prüfen."
+    },
+    {
+      "question": "Was darf in einen Bauschuttcontainer?",
+      "answer": "In reinen Bauschutt gehören mineralische Materialien wie Beton, Ziegel, Fliesen, Keramik oder Mörtel. Holz, Dämmung, Kunststoffe, Gipskarton, Restmüll und Sonderstoffe müssen getrennt geklärt werden."
+    },
+    {
+      "question": "Was ist der Unterschied zwischen Bauschutt und Baumischabfall?",
+      "answer": "Bauschutt ist überwiegend mineralisch. Baumischabfall enthält verschiedene Bau- und Renovierungsabfälle wie Holz, Folien, Kunststoffe oder Tapetenreste. Die richtige Zuordnung hilft, Zusatzaufwand zu vermeiden."
+    },
+    {
+      "question": "Was zählt alles als Bauschutt?",
+      "answer": "Zu Bauschutt zählen überwiegend mineralische Materialien wie Beton, Ziegel, Fliesen, Keramik, Mörtel, Putz, Naturstein oder Mauerwerksreste. Wichtig ist, dass keine Fremdstoffe wie Holz, Kunststoff, Dämmung, Folien, Tapeten, Erde, Restmüll oder gefährliche Stoffe enthalten sind."
+    },
+    {
+      "question": "Darf Ytong oder Porenbeton in den Bauschutt?",
+      "answer": "Porenbeton, oft auch Ytong genannt, wird nicht immer wie klassischer Bauschutt behandelt. Er kann je nach Entsorgungsweg eine eigene Einstufung benötigen. Bitte geben Sie Porenbeton in der Anfrage ausdrücklich an und mischen Sie ihn möglichst nicht ungeprüft unter reinen Bauschutt."
+    },
+    {
+      "question": "Darf Gipskarton in den Bauschutt-Container?",
+      "answer": "Gipskartonplatten gehören in der Regel nicht in reinen Bauschutt. Auch wenn sie bei Renovierungsarbeiten anfallen, werden sie anders entsorgt als mineralische Stoffe wie Beton, Ziegel oder Fliesen. Beschreiben Sie Gipskarton deshalb in der Anfrage, damit Seyfarth die passende Containerlösung prüfen kann."
+    },
+    {
+      "question": "Was mache ich mit Eternit, Asbest oder alten Fassadenplatten?",
+      "answer": "Eternitplatten, alte Fassadenplatten oder asbestverdächtige Baustoffe dürfen nicht in normale Bauschutt- oder Baumischabfall-Container gegeben werden. Vermeiden Sie Staub, zerkleinern Sie das Material nicht unnötig und geben Sie den Verdacht in Ihrer Anfrage an. Seyfarth stimmt die fachgerechte Entsorgung mit Ihnen ab."
+    },
+    {
+      "question": "Wie vermeide ich Mehrkosten bei der Containerentsorgung?",
+      "answer": "Am wichtigsten ist die richtige Trennung der Abfälle. Reiner Bauschutt sollte nicht mit Holz, Kunststoff, Dämmung, Gipskarton, Erde, Farben, Lacken oder gefährlichen Stoffen vermischt werden. Füllen Sie den Container nur bis zur zulässigen Füllhöhe und beschreiben Sie unklare Materialien vorab."
+    },
+    {
+      "question": "Welche Containergröße brauche ich für Bauschutt?",
+      "answer": "Die passende Containergröße hängt von Menge, Gewicht und Art des Materials ab. Bei Badumbau, Wanddurchbruch, Fliesenarbeiten oder größeren Abbrucharbeiten kann Bauschutt sehr schwer werden. Wenn Sie die Menge nur grob einschätzen können, beschreiben Sie Ihr Projekt in der Anfrage – Seyfarth unterstützt bei der Auswahl."
+    },
+    {
+      "question": "Kann Bauschutt recycelt werden?",
+      "answer": "Sortenreiner Bauschutt kann häufig aufbereitet und wiederverwertet werden. Deshalb ist eine saubere Trennung wichtig. Je weniger Fremdstoffe wie Holz, Kunststoff, Dämmung, Gipskarton oder gefährliche Materialien enthalten sind, desto besser lässt sich der Bauschutt fachgerecht verwerten."
+    },
+    {
+      "question": "Kann ich verschiedene Abfälle in einem Container mischen?",
+      "answer": "Teilweise ja, aber nicht immer. Einige Stoffe müssen getrennt gesammelt oder vorab geprüft werden. Wenn mehrere Materialien anfallen, beschreibt man sie am besten in der Anfrage."
+    },
+    {
+      "question": "Was mache ich, wenn ich die Abfallart nicht genau kenne?",
+      "answer": "Senden Sie eine kurze Beschreibung oder Fotos. Unklare Fälle werden bei Seyfarth als Anfrage behandelt und persönlich geprüft, statt automatisch als Bestellung bestätigt zu werden."
+    },
+    {
+      "question": "Welche Materialien sollte ich vorab klären?",
+      "answer": "Asbest, Mineralwolle/KMF, teerhaltige Dachpappe, belasteter Boden, Farben, Lacke, Chemikalien, Batterien, Elektrogeräte und Leuchtmittel sollten vor der Entsorgung abgestimmt werden."
+    },
+    {
+      "question": "Wie muss Mineralwolle oder KMF verpackt werden?",
+      "answer": "Mineralwolle und KMF sollten staubdicht und in geeigneten Säcken oder Big Bags bereitgestellt werden. Seyfarth prüft vorab, welche Annahmebedingungen für Ihren Fall gelten."
+    },
+    {
+      "question": "Was gilt bei Asbest oder asbesthaltigen Baustoffen?",
+      "answer": "Asbest darf nur fachgerecht verpackt und nach vorheriger Abstimmung entsorgt werden. Bitte geben Sie den Verdacht in der Anfrage an, damit Seyfarth die nächsten Schritte klären kann."
+    },
+    {
+      "question": "Darf ein Container auf der Straße stehen?",
+      "answer": "Das ist je nach Standort möglich, kann aber eine Genehmigung erfordern. Wenn der Container auf Straße, Gehweg oder Parkfläche stehen soll, geben Sie das im Konfigurator an."
+    },
+    {
+      "question": "Wie voll darf ein Container beladen werden?",
+      "answer": "Der Container sollte nur bis zur zulässigen Füllhöhe beladen werden. Überstehende Materialien können Transport und Sicherung erschweren."
+    },
+    {
+      "question": "Wann wird der Container geliefert?",
+      "answer": "Der Liefertermin wird nach Ihrer Anfrage abgestimmt. Je vollständiger Ort, Abfallart, Größe und Stellplatz angegeben sind, desto schneller kann Seyfarth die Lieferung prüfen."
+    },
+    {
+      "question": "Wie funktioniert die Abholung?",
+      "answer": "Wenn der Container fertig befüllt ist, stimmen Sie die Abholung mit Seyfarth ab. Bei größeren Mengen kann auch ein Tauschcontainer sinnvoll sein."
+    },
+    {
+      "question": "Kann ich die Standzeit verlängern?",
+      "answer": "In vielen Fällen ist eine Verlängerung möglich. Melden Sie sich rechtzeitig, damit Seyfarth die weitere Standzeit einplanen kann."
+    },
+    {
+      "question": "Entstehen Kosten durch das Absenden der Anfrage?",
+      "answer": "Nein. Das Absenden ist kostenlos. Seyfarth prüft Ihre Angaben und bestätigt Preis, Termin und Verfügbarkeit persönlich."
+    },
+    {
+      "question": "Welche Angaben helfen bei der schnellen Prüfung?",
+      "answer": "Hilfreich sind Adresse, gewünschter Zeitraum, Abfallart, grobe Menge, Stellplatzinformation und Fotos bei schwer einschätzbarem Material."
+    }
+  ]
+}

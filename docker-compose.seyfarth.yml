@@ -33,8 +33,16 @@ services:
     environment:
       NODE_ENV: production
       SEYFARTH_REQUEST_LOG_PATH: /app/data/shop-requests.jsonl
+      SEYFARTH_REQUEST_STATUS_PATH: /app/data/request-status.json
+      SEYFARTH_ADMIN_USERS_PATH: /app/data/seyfarth-admin-users.json
+      SEYFARTH_ADMIN_SESSION_SECRET: ${SEYFARTH_ADMIN_SESSION_SECRET:?set SEYFARTH_ADMIN_SESSION_SECRET in .env}
+      SEYFARTH_BOOTSTRAP_ADMIN_EMAIL: ${SEYFARTH_BOOTSTRAP_ADMIN_EMAIL:-}
+      SEYFARTH_BOOTSTRAP_ADMIN_PASSWORD: ${SEYFARTH_BOOTSTRAP_ADMIN_PASSWORD:-}
+      SEYFARTH_SMTP_SETTINGS_PATH: /app/data/seyfarth-smtp-settings.json
+      SEYFARTH_SMTP_PASSWORD: ${SEYFARTH_SMTP_PASSWORD:-}
     volumes:
       - seyfarth-request-data:/app/data
+      - ./storefront/content/help-content.json:/app/content/help-content.json:ro
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 30s
