@@ -1,9 +1,10 @@
 node_modules/
-.env
-.env.local
 dist/
-.medusa/
 .next/
-postgres_data/
-redis_data/
 .DS_Store
+
+# Env-Dateien — nur Templates werden committet, echte Werte niemals
+.env
+.env.*
+!.env.example
+!.env.prod.template

@@ -4,7 +4,6 @@
 # Usage:
 #   ./deploy.sh dev     → Deploy to hetzner-claw (Dev)
 #   ./deploy.sh prod    → Deploy to hetzner-prod (Prod)
-#   ./deploy.sh seed    → Run seed-services on active server
 # ============================================================
 set -euo pipefail
 
@@ -17,7 +16,7 @@ PROD_HOST="hetzner-prod"
 TARGET="${1:-}"
 
 if [ -z "$TARGET" ]; then
-  echo "Usage: ./deploy.sh [dev|prod|seed-dev|seed-prod]"
+  echo "Usage: ./deploy.sh [dev|prod]"
   exit 1
 fi
 
@@ -37,22 +36,8 @@ case "$TARGET" in
     fi
     echo "🚀 Deploying to PROD ($PROD_HOST)..."
     ;;
-  seed-dev)
-    HOST="$DEV_HOST"
-    echo "🌱 Running seed-services on DEV..."
-    ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE exec seyfarth-medusa npx medusa exec src/scripts/seed-services.ts"
-    echo "✅ Seed done on DEV"
-    exit 0
-    ;;
-  seed-prod)
-    HOST="$PROD_HOST"
-    echo "🌱 Running seed-services on PROD..."
-    ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE exec seyfarth-medusa npx medusa exec src/scripts/seed-services.ts"
-    echo "✅ Seed done on PROD"
-    exit 0
-    ;;
   *)
-    echo "❌ Unknown target: $TARGET. Use: dev|prod|seed-dev|seed-prod"
+    echo "❌ Unknown target: $TARGET. Use: dev|prod"
     exit 1
     ;;
 esac
@@ -83,19 +68,19 @@ else
   ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env up -d --remove-orphans"
 fi
 
-# 4. Wait for medusa
-echo "⏳ Waiting for Medusa to be ready..."
+# 4. Wait for storefront
+echo "⏳ Waiting for Storefront to be ready..."
 ATTEMPTS=0
-until ssh "$HOST" "docker exec seyfarth-medusa wget -qO- http://localhost:9000/health 2>/dev/null | grep -q 'ok'" 2>/dev/null || [ $ATTEMPTS -gt 30 ]; do
+until ssh "$HOST" "docker exec seyfarth-storefront node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"" 2>/dev/null || [ $ATTEMPTS -gt 30 ]; do
   sleep 5
   ATTEMPTS=$((ATTEMPTS+1))
   echo "  ... attempt $ATTEMPTS/30"
 done
 
 if [ $ATTEMPTS -gt 30 ]; then
-  echo "⚠️  Medusa took too long. Check logs: ssh $HOST 'docker logs seyfarth-medusa --tail 50'"
+  echo "⚠️  Storefront took too long. Check logs: ssh $HOST 'docker logs seyfarth-storefront --tail 50'"
 else
-  echo "✅ Medusa is up!"
+  echo "✅ Storefront is up!"
 fi
 
 echo ""
@@ -104,17 +89,7 @@ echo "✅ Deploy to $TARGET done!"
 echo ""
 if [ "$TARGET" = "dev" ]; then
   echo "  🌍 Dev URL: https://seyfarth-dev.visionmakegpt.work"
-  echo "  🔑 Get publishable key from admin panel:"
-  echo "     https://seyfarth-dev.visionmakegpt.work/admin"
-  echo ""
-  echo "  🌱 Seed all products:"
-  echo "     ./deploy.sh seed-dev"
 else
   echo "  🌍 Prod URL: https://seyfarth.visionmakegpt.work"
-  echo "  🔑 Get publishable key from admin panel:"
-  echo "     https://seyfarth.visionmakegpt.work/admin"
-  echo ""
-  echo "  🌱 Seed all products:"
-  echo "     ./deploy.sh seed-prod"
 fi
 echo "================================================"
