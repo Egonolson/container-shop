@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/lib/auth";
-import { CartProvider } from "@/lib/cart";
 
 export const metadata: Metadata = {
   title: "Seyfarth Container-Dienst — Container online anfragen",
@@ -16,11 +14,7 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className="font-sans antialiased">
-        <AuthProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </AuthProvider>
+        {children}
       </body>
     </html>
   );

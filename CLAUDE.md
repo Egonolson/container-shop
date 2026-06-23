@@ -4,48 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projekt
 
-B2B-Onlineshop für einen Entsorgungs- und Schüttgut-Betrieb (Single-Tenant). Gewerbekunden bestellen Container-Services (Stellen, Abholen, Wechseln), verwalten Lieferorte und Dokumente. Detaillierte Spezifikation siehe `Projektplan_Onlineshop_Container-Portal.md`.
+Single-Tenant Onlineshop der Containerdienst Seyfarth. Der öffentliche Shop ist eine **Next.js Anfrage-/Konfiguratorstrecke** für Container, Baustoffe und Transport: Kunden wählen geführt Entsorgung/Baustoffe/Transport, erfassen Abfallart, PLZ/Ort, Containergröße, Stellplatz, Termin und Kontakt. Es gibt bewusst **keine Online-Festpreislogik** für tonnageabhängige Entsorgung — nach dem Absenden prüft Seyfarth Preis, Termin und Verfügbarkeit persönlich. Anfragen werden serverseitig als JSONL im persistenten Docker-Volume abgelegt.
 
-## Geplanter Tech-Stack
+## Tech-Stack (aktiv)
 
 | Schicht | Technologie |
 |---------|------------|
-| E-Commerce-Backend | Medusa.js v2 (TypeScript, MikroORM, PostgreSQL) |
-| Kunden-Frontend | Next.js 15 + Tailwind CSS 4 + shadcn/ui + React Query + Recharts |
-| Marketing-Website | Next.js (SSG), evtl. im gleichen Projekt |
-| Datenbank | PostgreSQL 16 |
-| Cache / Queue | Redis 7 |
-| Datei-Storage | MinIO (S3-kompatibel, für Rechnungen/Lieferscheine/Wiegescheine) |
-| ERP-Sync | Custom Node.js Service (SFTP + XML/CSV) |
-| Reverse Proxy | Traefik 3 (SSL via Let's Encrypt) |
-| Hosting | Hetzner Cloud (DE), Docker Compose |
-| CI/CD | GitHub Actions |
-| Monitoring | Grafana + Prometheus |
+| Storefront | Next.js 16 (App Router, Standalone) + Tailwind CSS 4 + shadcn/ui + React Query |
+| Anfrage-Ablage | Serverseitiges JSONL im Docker-Volume (`/app/data/shop-requests.jsonl`) |
+| Reverse Proxy | Nginx — Security-Header, Rate-Limit (`nginx.seyfarth.conf`) |
+| Tunnel | Cloudflare (`tunnel-config.yml`, nur PROD über `--profile prod`) |
+| Hosting | Hetzner Cloud (DE), Docker Compose (`docker-compose.seyfarth.yml`) |
+| Sprache UI | Deutsch (mit Umlauten) |
 
-## Architektur-Überblick
+> **Historie:** Ursprünglich war ein Medusa.js-v2-Backend mit B2B-Portal (Aufträge, Lieferorte, Dokumente, GewAbfV) geplant — siehe `Projektplan_Onlineshop_Container-Portal.md` und `docs/plans/`. Dieses Backend wurde **vollständig entfernt** und ist nicht mehr Laufzeit-Abhängigkeit. Der öffentliche Shop läuft Medusa-frei.
 
-Zwei Nutzergruppen: **Betreiber** (Admin via Medusa Admin Dashboard) und **Gewerbekunden** (Next.js Storefront).
+## Struktur
 
-### Custom Medusa Modules (zu entwickeln)
-- `delivery-locations` — Lieferort-Verwaltung pro B2B-Kunde mit PLZ-Validierung gegen Einzugsgebiete
-- `documents` — Dokumenten-Center (Rechnungen, Lieferscheine, Wiegescheine) mit MinIO-Storage
-- `statistics` — Kosten-/Mengenauswertung, Excel-Export (`exceljs`), CO2-Reporting mit PDF (`@react-pdf/renderer`)
-- `gewabfv` — GewAbfV-Dokumentation (Gewerbeabfallverordnung) mit Trennungsbegründungen
-
-### Kern-Workflow: Auftragsbestellung
-Medusa v2 Workflow Engine mit Compensation (Rollback):
-1. `validateDeliveryLocation` → 2. `validateAvailability` → 3. `calculatePrice` (kundenindividuell) → 4. `createOrder` → 5. `sendConfirmationEmail` → 6. `syncToERP`
-
-### Auftrags-Status-Flow
-`Erstellt → Bestätigt → Disponiert → In Ausführung → Abgeschlossen → Dokumentiert`
-
-### Kundenrollen
-Firmen-Admin, Besteller, Nur-Lesen, Baustellen-Manager — mit abgestuften Berechtigungen auf Aufträge, Dokumente, Kosten und Nutzerverwaltung.
+- `storefront/` — die einzige Anwendung (Next.js). Öffentliche Seiten: `/`, `/checkout`, `/checkout/success`, `/agb`, `/datenschutz`, `/impressum`, API: `/api/shop-requests`.
+- `storefront/src/components/public/` — Anfrage-Konfigurator (`seyfarth-configurator.tsx`), Shell, Header/Footer, Cookie-Banner.
+- `storefront/src/lib/seyfarth-shop-data.ts` — Produkt-/Konfigurator-Daten und Formular-Version (Single Source).
+- `docker-compose.seyfarth.yml` — aktive Runtime (DEV `hetzner-claw` / PROD `hetzner-prod`, Port 8092).
+- `deploy.sh` — Deploy nach DEV/PROD.
 
 ## Konventionen
 
-- Sprache im Code: Englisch (Variablen, Kommentare, Commits)
-- Sprache in der UI: Deutsch
-- Commit-Messages: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.)
-- Alle Services laufen als Docker-Container
-- DSGVO-Konformität beachten: Hosting in DE, keine externen Tracker, selbst gehostete Analytics
+- Sprache im Code: Englisch (Variablen, Kommentare, Commits); Sprache in der UI: Deutsch mit korrekten Umlauten.
+- Commit-Messages: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, etc.).
+- Alle Services laufen als Docker-Container.
+- DSGVO-Konformität: Hosting in DE, keine externen Tracker.
+- Vor PROD-Rollout: DEV-first auf `hetzner-claw`, `npm run typecheck` + `npm run build` grün, HTTP-/Browser-Smoke.
