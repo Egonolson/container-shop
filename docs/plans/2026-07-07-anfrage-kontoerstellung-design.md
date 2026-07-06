@@ -54,8 +54,22 @@ Platzhalter „Meine Anfragen“ auf `/konto` wird durch echte, rein lesende Lis
 
 Neue Tabelle im Admin-Dashboard: alle `shop_requests` (Staff sieht alle via RLS), Spalten Referenz/Modus/Status/Kunde (oder „Gast“)/Datum — read-only, keine Status-Bearbeitung in dieser Iteration.
 
-## Bekannte Einschränkungen
+## Erweiterter Umfang (2026-07-07, alle im Branch umgesetzt)
 
-- Betrifft nur DEV/den Feature-Branch; PROD läuft unverändert auf dem alten JSONL-Code weiter, bis der Branch dort ausgerollt wird.
-- E-Mail-Enumeration über `email_has_account` ist möglich (rate-limitiert) — dieselbe Information, die GoTrue beim Registrieren ohnehin über „E-Mail bereits vergeben“ preisgibt.
+Über die reine Kontoerstellung hinaus umgesetzt:
+
+- **Prefill:** eingeloggte Kunden bekommen Kontakt-/Adressdaten aus dem Profil vorbefüllt.
+- **„Nochmal anfragen":** frühere Anfrage aus `/konto` per localStorage in den Konfigurator übernehmen (ohne Datum).
+- **Baustellen/Standorte:** neue Tabelle `construction_sites` (RLS: Kunde verwaltet eigene, Staff liest), Verwaltungs-UI in `/konto`, Auswahl im Ort-Schritt; `shop_requests.construction_site_id` mit eigentumsgeprüfter Insert-Policy.
+- **Geo-Pin:** Leaflet/OpenStreetMap-Karte im Stellplatz-Schritt (Anbieterentscheidung: OSM statt Google), Koordinaten im Payload; nginx-CSP `img-src` nur für OSM-Kachel-Hosts geöffnet.
+- **Stellplatzfoto:** privater Storage-Bucket `placement-photos` mit uid-gebundener RLS, Upload für eingeloggte Kunden.
+
+## Bekannte Einschränkungen / offene Punkte
+
+- **Deploy-Stand:** Alles ist im Branch und **lokal** verifiziert (Build/Typecheck grün, RLS-Grenzen direkt getestet, Karte im Browser geprüft), aber **noch nicht auf den DEV-Server (hetzner-claw) ausgerollt**. PROD unverändert.
+- **WICHTIG vor dem nächsten DEV-Deploy:** `supabase/db/bootstrap.sh` wendet die App-Migrationen nur an, wenn `customer_profiles` noch nicht existiert. Auf dem DEV-Volume existiert sie bereits → die neuen Migrationen (`shop_requests`, `construction_sites`, `placement_photos_storage`) würden **nicht** automatisch angewendet. Vor/bei Deploy müssen sie manuell eingespielt oder die Bootstrap-Logik auf echte Migrations-Verfolgung umgestellt werden.
+- Guest-Foto-Upload ist bewusst ausgeklammert (braucht anfrage-gebundenes Token).
+- Foto-Löschung (Auftragsabschluss + 3 Monate) braucht zuerst ein `completed_at` an `shop_requests` und einen geplanten Job — Folge-Schritt.
+- E-Mail-Enumeration über `email_has_account` ist möglich (rate-limitiert) — dieselbe Information, die GoTrue beim Registrieren ohnehin preisgibt.
 - Status-Bearbeitung im Admin-Backend ist ein Folge-Schritt.
+- Semantik bleibt „Anfrage" bis zur ERP-Preisanbindung (dann Festpreis-Baustoffe → echte Bestellung).
