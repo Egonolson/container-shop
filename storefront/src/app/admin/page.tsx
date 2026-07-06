@@ -44,11 +44,16 @@ export default async function AdminDashboardPage() {
           <h1 className="text-xl font-semibold text-seyfarth-navy">Backoffice</h1>
           <p className="text-sm text-zinc-500">Angemeldet als {user.email}</p>
         </div>
-        <form action={adminLogoutAction}>
-          <Button type="submit" variant="outline">
-            Abmelden
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <a href="/admin/smtp">SMTP / E-Mail</a>
           </Button>
-        </form>
+          <form action={adminLogoutAction}>
+            <Button type="submit" variant="outline">
+              Abmelden
+            </Button>
+          </form>
+        </div>
       </div>
 
       <Card>

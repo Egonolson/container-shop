@@ -38,6 +38,11 @@ services:
     networks: [seyfarth-net]
     environment:
       NODE_ENV: production
+      # Server-only (runtime, NOT a build arg → never in the client bundle).
+      # Used by the admin Supabase client for privileged reads (e.g. SMTP
+      # settings) and as key material for at-rest secret encryption.
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 30s

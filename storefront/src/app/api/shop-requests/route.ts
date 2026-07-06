@@ -263,6 +263,24 @@ export async function POST(request: NextRequest) {
     return json("Die Anfrage konnte technisch nicht gespeichert werden. Bitte rufen Sie uns an oder versuchen Sie es später erneut.", 503)
   }
 
+  // Best-effort notifications — never fail the request if mail is down or the
+  // SMTP settings aren't configured yet. Notify Seyfarth and confirm to the
+  // customer using the admin-managed SMTP settings.
+  const modeLabel = mode === "entsorgung" ? "Entsorgung" : mode === "baustoffe" ? "Baustoffe" : "Transport"
+  const operator = cleanString(process.env.OPERATOR_EMAIL, 200)
+  const summary = `Referenz: ${requestId}\nBereich: ${modeLabel}\nOrt: ${entry.location.postalCode} ${entry.location.city}\nKunde: ${firstName} ${lastName}${company ? ` (${company})` : ""}\nE-Mail: ${email}\nTelefon: ${phone}\nAdresse: ${street}, ${postalCode} ${city}`
+  void (async () => {
+    try {
+      const { sendMail } = await import("@/lib/email")
+      if (operator) {
+        await sendMail({ to: operator, subject: `Neue Anfrage ${requestId} (${modeLabel})`, text: `Es ist eine neue Anfrage über den Onlineshop eingegangen.\n\n${summary}${message ? `\n\nNachricht:\n${message}` : ""}` })
+      }
+      await sendMail({ to: email, subject: `Ihre Anfrage bei Seyfarth (${requestId})`, text: `Vielen Dank für Ihre Anfrage. Wir prüfen Ihre Angaben persönlich und melden uns zur Bestätigung von Preis, Termin und Verfügbarkeit.\n\n${summary}\n\nMit dem Absenden entstehen keine Kosten.\n\nContainerdienst Seyfarth` })
+    } catch {
+      // swallow — notifications are non-critical
+    }
+  })()
+
   return NextResponse.json({
     requestId,
     status: "received",

@@ -34,6 +34,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_smtp_settings: {
+        Row: {
+          from_email: string | null
+          from_name: string
+          host: string | null
+          id: number
+          password_cipher: string | null
+          port: number
+          secure: boolean
+          updated_at: string
+          updated_by: string | null
+          username: string | null
+        }
+        Insert: {
+          from_email?: string | null
+          from_name?: string
+          host?: string | null
+          id?: number
+          password_cipher?: string | null
+          port?: number
+          secure?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          username?: string | null
+        }
+        Update: {
+          from_email?: string | null
+          from_name?: string
+          host?: string | null
+          id?: number
+          password_cipher?: string | null
+          port?: number
+          secure?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       construction_sites: {
         Row: {
           city: string | null
