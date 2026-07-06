@@ -84,6 +84,13 @@ fi
 
 ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env $PROFILE_FLAG up -d --remove-orphans"
 
+# nginx mounts its config as a bind volume. `up -d` leaves the container
+# "Running" when only the mounted file changed, so a new CSP / route change
+# in nginx.seyfarth.conf would NOT take effect. Force-recreate nginx so its
+# config is always picked up (cheap; nginx restart is fast).
+echo "🔁 Force-recreating nginx to pick up config changes..."
+ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env up -d --force-recreate seyfarth-nginx"
+
 # 4. Wait for storefront
 echo "⏳ Waiting for Storefront to be ready..."
 ATTEMPTS=0
