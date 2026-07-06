@@ -4,9 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { MapPin as MapPinIcon } from "lucide-react"
 import { requireUser } from "@/lib/supabase/auth-guards"
 import { logoutAction } from "./actions"
 import { ProfileForm } from "./profile-form"
+import { ReorderButton } from "./reorder-button"
+import { SitesManager } from "./sites-manager"
 
 const MODE_LABELS: Record<string, string> = { entsorgung: "Entsorgung", baustoffe: "Baustoffe", transport: "Transport" }
 
@@ -16,7 +19,11 @@ export default async function KontoPage() {
   const { data: profile } = await supabase.from("customer_profiles").select("*").eq("id", user.id).single()
   const { data: requests } = await supabase
     .from("shop_requests")
-    .select("id, reference, mode, status, created_at")
+    .select("id, reference, mode, status, created_at, payload")
+    .order("created_at", { ascending: false })
+  const { data: sites } = await supabase
+    .from("construction_sites")
+    .select("*")
     .order("created_at", { ascending: false })
 
   if (!profile) {
@@ -60,6 +67,23 @@ export default async function KontoPage() {
           </Card>
 
           <Card className="rounded-[28px] border-zinc-100 shadow-sm">
+            <CardHeader className="flex-row items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-seyfarth-blue/10 text-seyfarth-blue">
+                <MapPinIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-base text-seyfarth-navy">Meine Baustellen &amp; Standorte</CardTitle>
+                <CardDescription>
+                  Verwalten Sie Ihre Lieferorte einmal – bei jeder Anfrage wählen Sie sie dann per Klick aus.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <SitesManager sites={sites ?? []} />
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-100 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base text-seyfarth-navy">Meine Anfragen</CardTitle>
               <CardDescription>Anfragen, die Sie über den Konfigurator eingereicht haben.</CardDescription>
@@ -75,6 +99,7 @@ export default async function KontoPage() {
                       <TableHead>Bereich</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Datum</TableHead>
+                      <TableHead className="text-right">Aktion</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -84,6 +109,7 @@ export default async function KontoPage() {
                         <TableCell>{MODE_LABELS[r.mode] ?? r.mode}</TableCell>
                         <TableCell><Badge variant="secondary">{r.status}</Badge></TableCell>
                         <TableCell>{new Date(r.created_at).toLocaleDateString("de-DE")}</TableCell>
+                        <TableCell className="text-right"><ReorderButton payload={r.payload} /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

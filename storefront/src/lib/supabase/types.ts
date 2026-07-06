@@ -34,6 +34,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      construction_sites: {
+        Row: {
+          city: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country: string
+          created_at: string
+          customer_id: string
+          erp_site_id: string | null
+          geo_lat: number | null
+          geo_lng: number | null
+          house_number: string | null
+          id: string
+          is_archived: boolean
+          name: string
+          notes: string | null
+          postal_code: string | null
+          street: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string
+          created_at?: string
+          customer_id: string
+          erp_site_id?: string | null
+          geo_lat?: number | null
+          geo_lng?: number | null
+          house_number?: string | null
+          id?: string
+          is_archived?: boolean
+          name: string
+          notes?: string | null
+          postal_code?: string | null
+          street?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string
+          created_at?: string
+          customer_id?: string
+          erp_site_id?: string | null
+          geo_lat?: number | null
+          geo_lng?: number | null
+          house_number?: string | null
+          id?: string
+          is_archived?: boolean
+          name?: string
+          notes?: string | null
+          postal_code?: string | null
+          street?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_profiles: {
         Row: {
           address_verified: boolean
@@ -96,6 +156,7 @@ export type Database = {
       }
       shop_requests: {
         Row: {
+          construction_site_id: string | null
           created_at: string
           customer_id: string | null
           id: string
@@ -106,6 +167,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          construction_site_id?: string | null
           created_at?: string
           customer_id?: string | null
           id?: string
@@ -116,6 +178,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          construction_site_id?: string | null
           created_at?: string
           customer_id?: string | null
           id?: string
@@ -125,7 +188,15 @@ export type Database = {
           request_form_version?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shop_requests_construction_site_id_fkey"
+            columns: ["construction_site_id"]
+            isOneToOne: false
+            referencedRelation: "construction_sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

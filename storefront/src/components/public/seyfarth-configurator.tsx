@@ -18,7 +18,10 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import type { Database } from "@/lib/supabase/types"
 import { validateRegistration } from "@/lib/auth/validate-registration"
+
+type ConstructionSite = Database["public"]["Tables"]["construction_sites"]["Row"]
 import {
   REQUEST_FORM_VERSION,
   ShopMode,
@@ -95,19 +98,131 @@ export function SeyfarthConfigurator() {
   const [wantsAccount, setWantsAccount] = useState(false)
   const [emailAccountState, setEmailAccountState] = useState<EmailAccountState>("idle")
   const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null)
+  const [sites, setSites] = useState<ConstructionSite[]>([])
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
   const successRef = useRef<HTMLElement | null>(null)
+  const reorderAppliedRef = useRef(false)
+
+  // "Nochmal anfragen": restore a past request handed over from /konto via
+  // localStorage. Runs before the profile prefill (see below) and wins on
+  // the contact block, since these are the values the customer chose to
+  // repeat. Dates are intentionally NOT restored — a repeat needs fresh ones.
+  useEffect(() => {
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem("seyfarth-reorder")
+      if (raw) localStorage.removeItem("seyfarth-reorder")
+    } catch {
+      return
+    }
+    if (!raw) return
+    let p: Record<string, unknown>
+    try {
+      p = JSON.parse(raw)
+    } catch {
+      return
+    }
+    const restoredMode = typeof p.mode === "string" ? p.mode : ""
+    if (!["entsorgung", "baustoffe", "transport"].includes(restoredMode)) return
+    reorderAppliedRef.current = true
+    const loc = (p.location ?? {}) as Record<string, unknown>
+    const sel = (p.selection ?? {}) as Record<string, unknown>
+    const plc = (p.placement ?? {}) as Record<string, unknown>
+    const con = (p.contact ?? {}) as Record<string, unknown>
+    const str = (v: unknown, fallback = "") => (typeof v === "string" ? v : fallback)
+
+    setMode(restoredMode as ShopMode)
+    setPostalCode(str(loc.postalCode))
+    setCity(str(loc.city))
+    if (restoredMode === "entsorgung") {
+      setSelectedWasteId(str(sel.id))
+      if (str(sel.containerSize)) setContainerSize(str(sel.containerSize))
+    } else if (restoredMode === "baustoffe") {
+      setSelectedMaterialId(str(sel.id))
+      const q = (sel.quantity ?? {}) as Record<string, unknown>
+      if (typeof q.value === "number") setQuantity(String(q.value))
+    } else {
+      setTransportDescription(str(sel.description))
+    }
+    if (["private", "public"].includes(str(plc.type))) setPlacement(str(plc.type) as PlacementType)
+    setContact((current) => ({
+      ...current,
+      customerType: str(con.customerType, current.customerType) === "business" ? "business" : "private",
+      firstName: str(con.firstName, current.firstName),
+      lastName: str(con.lastName, current.lastName),
+      company: str(con.company, current.company),
+      email: str(con.email, current.email),
+      phone: str(con.phone, current.phone),
+      street: str(con.street, current.street),
+      postalCode: str(con.postalCode, current.postalCode),
+      city: str(con.city, current.city),
+      message: str(con.message, current.message),
+    }))
+  }, [])
 
   useEffect(() => {
     let active = true
-    createClient()
-      .auth.getUser()
-      .then(({ data }) => {
-        if (active && data.user?.email) setLoggedInEmail(data.user.email)
-      })
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!active || !data.user?.email) return
+      setLoggedInEmail(data.user.email)
+      // Load the customer's saved construction sites so they can pick one in
+      // the location step instead of typing an address.
+      supabase
+        .from("construction_sites")
+        .select("*")
+        .eq("is_archived", false)
+        .order("created_at", { ascending: false })
+        .then(({ data: siteRows }) => {
+          if (active && siteRows) setSites(siteRows)
+        })
+      // Prefill the contact step from the saved profile so returning
+      // customers don't retype their details ("schnell bestellen"). Skipped
+      // when a reorder already restored the contact block (that wins).
+      if (reorderAppliedRef.current) return
+      const { data: profile } = await supabase
+        .from("customer_profiles")
+        .select("customer_kind, first_name, last_name, company_name, phone, street, house_number, postal_code, city")
+        .eq("id", data.user.id)
+        .single()
+      if (!active || !profile || reorderAppliedRef.current) return
+      setContact((current) => ({
+        ...current,
+        customerType: profile.customer_kind === "business" ? "business" : "private",
+        firstName: profile.first_name ?? current.firstName,
+        lastName: profile.last_name ?? current.lastName,
+        company: profile.company_name ?? current.company,
+        email: data.user.email ?? current.email,
+        phone: profile.phone ?? current.phone,
+        street: [profile.street, profile.house_number].filter(Boolean).join(" ") || current.street,
+        postalCode: profile.postal_code ?? current.postalCode,
+        city: profile.city ?? current.city,
+      }))
+    })
     return () => {
       active = false
     }
   }, [])
+
+  const selectSite = (site: ConstructionSite) => {
+    setSelectedSiteId(site.id)
+    setPostalCode(site.postal_code ?? "")
+    setCity(site.city ?? "")
+    setAutoFilledCity(null)
+    setContact((current) => ({
+      ...current,
+      street: [site.street, site.house_number].filter(Boolean).join(" ") || current.street,
+      postalCode: site.postal_code ?? current.postalCode,
+      city: site.city ?? current.city,
+    }))
+  }
+
+  const useNewAddress = () => {
+    setSelectedSiteId(null)
+    setPostalCode("")
+    setCity("")
+    setAutoFilledCity(null)
+  }
 
   const checkEmailAccount = async () => {
     if (loggedInEmail) return
@@ -272,6 +387,7 @@ export function SeyfarthConfigurator() {
       dates: { deliveryDate, pickupDate, flexibility: dateFlexibility },
       pricing: { transportNet: transportPrice, materialNet, materialTotalNet, wasteDisposalNetPerUnit: selectedWaste?.netPrice, finalByWeighing: selectedWaste?.requiresWeighing },
       contact,
+      constructionSiteId: selectedSiteId,
       confirmations: { privacyAccepted, submittedNoticeVersion: REQUEST_FORM_VERSION },
     }
 
@@ -378,9 +494,46 @@ export function SeyfarthConfigurator() {
 
               {step === "location" && (
                 <StepBlock title="Wo soll der Container stehen oder Material geliefert werden?" intro="Mit PLZ und Ort prüfen wir, ob Ihr Standort im Liefergebiet liegt und welche Transportzone gilt.">
+                  {sites.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Ihre Baustellen &amp; Standorte</p>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {sites.map((site) => (
+                          <button
+                            key={site.id}
+                            type="button"
+                            onClick={() => selectSite(site)}
+                            aria-pressed={selectedSiteId === site.id}
+                            className={cx(
+                              "flex items-start gap-3 rounded-2xl border p-3 text-left transition hover:border-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                              selectedSiteId === site.id ? "border-seyfarth-blue bg-seyfarth-blue/5 shadow-sm" : "border-zinc-200 bg-white",
+                            )}
+                          >
+                            <MapPin className={cx("mt-0.5 h-5 w-5 shrink-0", selectedSiteId === site.id ? "text-seyfarth-blue" : "text-zinc-400")} />
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-semibold text-seyfarth-navy">{site.name}</span>
+                              <span className="block truncate text-xs text-zinc-500">{[[site.street, site.house_number].filter(Boolean).join(" "), [site.postal_code, site.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</span>
+                            </span>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={useNewAddress}
+                          aria-pressed={selectedSiteId === null}
+                          className={cx(
+                            "flex items-center gap-3 rounded-2xl border border-dashed p-3 text-left text-sm font-medium transition hover:border-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                            selectedSiteId === null ? "border-seyfarth-blue bg-seyfarth-blue/5 text-seyfarth-navy" : "border-zinc-300 bg-white text-zinc-500",
+                          )}
+                        >
+                          <MapPin className="h-5 w-5 shrink-0 text-zinc-400" />
+                          Andere / neue Adresse eingeben
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="grid gap-4 md:grid-cols-2">
-                    <Field label="Postleitzahl"><input value={postalCode} onChange={(e) => { setPostalCode(e.target.value); updateContact("postalCode", e.target.value) }} className="sey-input" inputMode="numeric" autoComplete="postal-code" placeholder="z. B. 04639" /></Field>
-                    <Field label="Ort"><input value={city} onChange={(e) => { setCity(e.target.value); setAutoFilledCity(null); updateContact("city", e.target.value) }} className="sey-input" autoComplete="address-level2" placeholder="wird nach PLZ automatisch ergänzt" /></Field>
+                    <Field label="Postleitzahl"><input value={postalCode} onChange={(e) => { setPostalCode(e.target.value); setSelectedSiteId(null); updateContact("postalCode", e.target.value) }} className="sey-input" inputMode="numeric" autoComplete="postal-code" placeholder="z. B. 04639" /></Field>
+                    <Field label="Ort"><input value={city} onChange={(e) => { setCity(e.target.value); setAutoFilledCity(null); setSelectedSiteId(null); updateContact("city", e.target.value) }} className="sey-input" autoComplete="address-level2" placeholder="wird nach PLZ automatisch ergänzt" /></Field>
                   </div>
                   {zoneMatch && (
                     <Notice tone="success">

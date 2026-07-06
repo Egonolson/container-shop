@@ -68,7 +68,7 @@ function parseDate(value: unknown) {
 }
 
 function rejectUnexpectedTopLevelKeys(payload: Record<string, unknown>) {
-  const allowed = new Set(["requestFormVersion", "mode", "intent", "location", "selection", "containerSize", "quantity", "placement", "dates", "pricing", "contact", "confirmations", "website"])
+  const allowed = new Set(["requestFormVersion", "mode", "intent", "location", "selection", "containerSize", "quantity", "placement", "dates", "pricing", "contact", "constructionSiteId", "confirmations", "website"])
   return Object.keys(payload).filter((key) => !allowed.has(key))
 }
 
@@ -235,9 +235,15 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Only a logged-in customer can attach a construction site; RLS additionally
+  // rejects a site the caller doesn't own (see construction_sites migration).
+  const rawSiteId = cleanString(payload.constructionSiteId, 64)
+  const constructionSiteId = user && rawSiteId ? rawSiteId : null
+
   const { error: insertError } = await supabase.from("shop_requests").insert({
     reference: requestId,
     customer_id: user?.id ?? null,
+    construction_site_id: constructionSiteId,
     mode,
     request_form_version: REQUEST_FORM_VERSION,
     payload: entry as unknown as Json,
