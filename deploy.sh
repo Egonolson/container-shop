@@ -25,11 +25,22 @@ case "$TARGET" in
   dev)
     HOST="$DEV_HOST"
     ENV_FILE=".env.dev"
+    PROFILE_FLAG="--profile supabase"
+    # DEV has no legacy orphan to protect, so cleaning up orphans is fine.
+    REMOVE_ORPHANS="--remove-orphans"
     echo "🚀 Deploying to DEV ($DEV_HOST)..."
     ;;
   prod)
     HOST="$PROD_HOST"
     ENV_FILE=".env.prod"
+    # PROD activates the SAME supabase profile as DEV (self-hosted Supabase),
+    # NOT the `prod` profile: PROD is routed by the shared cloudflared-kirk
+    # tunnel, so the compose `seyfarth-tunnel` service must NOT be started.
+    PROFILE_FLAG="--profile supabase"
+    # Do NOT remove orphans on PROD: the legacy `seyfarth-postgres` container
+    # belongs to this compose project but isn't in the file — --remove-orphans
+    # would delete it. It is backed up but left running until deliberately retired.
+    REMOVE_ORPHANS=""
     if [ ! -f ".env.prod" ]; then
       echo "❌ .env.prod not found! Copy .env.prod.template and fill in real values."
       exit 1
@@ -57,16 +68,31 @@ rsync -az --delete \
 echo "🔐 Copying env file..."
 scp "$ENV_FILE" "$HOST:$REPO_DIR/.env"
 
+# Both dev and prod now run the self-hosted Supabase profile.
+echo "🔧 Generating kong.yml from template..."
+ssh "$HOST" "cd $REPO_DIR && bash supabase/kong/generate-kong.sh"
+
 # 3. Build & start
 echo "🐳 Building and starting containers..."
 ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env pull --ignore-pull-failures 2>/dev/null; true"
 ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env build --no-cache"
 
-if [ "$TARGET" = "prod" ]; then
-  ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env --profile prod up -d --remove-orphans"
-else
-  ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env up -d --remove-orphans"
-fi
+# Supabase Postgres needs to be up (and password/ownership-fixed, see
+# bootstrap.sh) before auth/rest/storage can connect successfully — start
+# it first, bootstrap (applies only pending migrations), then bring up the rest.
+echo "🐘 Starting seyfarth-db first (supabase profile)..."
+ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env $PROFILE_FLAG up -d seyfarth-db"
+echo "🔧 Bootstrapping database (idempotent)..."
+ssh "$HOST" "cd $REPO_DIR && bash supabase/db/bootstrap.sh"
+
+ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env $PROFILE_FLAG up -d $REMOVE_ORPHANS"
+
+# nginx mounts its config as a bind volume. `up -d` leaves the container
+# "Running" when only the mounted file changed, so a new CSP / route change
+# in nginx.seyfarth.conf would NOT take effect. Force-recreate nginx so its
+# config is always picked up (cheap; nginx restart is fast).
+echo "🔁 Force-recreating nginx to pick up config changes..."
+ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env up -d --force-recreate seyfarth-nginx"
 
 # 4. Wait for storefront
 echo "⏳ Waiting for Storefront to be ready..."

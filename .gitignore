@@ -8,3 +8,7 @@ dist/
 .env.*
 !.env.example
 !.env.prod.template
+
+# Kong-Config mit aufgeloesten Secrets — nur das Template wird committet
+supabase/kong/kong.yml
+supabase/kong/kong-resolved.yml

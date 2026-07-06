@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import {
   AlertTriangle,
@@ -17,6 +18,18 @@ import {
   Truck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
+import type { Database } from "@/lib/supabase/types"
+import { validateRegistration } from "@/lib/auth/validate-registration"
+import { REGISTRATION_ENABLED } from "@/lib/config"
+
+type ConstructionSite = Database["public"]["Tables"]["construction_sites"]["Row"]
+
+// Leaflet touches window/document, so the map only loads in the browser.
+const PlacementMap = dynamic(() => import("./placement-map"), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full animate-pulse rounded-2xl bg-zinc-100" />,
+})
 import {
   REQUEST_FORM_VERSION,
   ShopMode,
@@ -30,7 +43,10 @@ import {
   wasteItems,
 } from "@/lib/seyfarth-shop-data"
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 type Step = "mode" | "location" | "selection" | "container" | "placement" | "dates" | "contact" | "summary"
+type EmailAccountState = "idle" | "checking" | "exists" | "new"
 
 const steps: { key: Step; label: string }[] = [
   { key: "mode", label: "Bereich" },
@@ -45,7 +61,8 @@ const steps: { key: Step; label: string }[] = [
 
 const emptyContact = {
   customerType: "private",
-  name: "",
+  firstName: "",
+  lastName: "",
   company: "",
   email: "",
   phone: "",
@@ -85,7 +102,185 @@ export function SeyfarthConfigurator() {
   const [submitting, setSubmitting] = useState(false)
   const [submittedId, setSubmittedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [password, setPassword] = useState("")
+  const [wantsAccount, setWantsAccount] = useState(false)
+  const [emailAccountState, setEmailAccountState] = useState<EmailAccountState>("idle")
+  const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null)
+  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null)
+  const [sites, setSites] = useState<ConstructionSite[]>([])
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
+  const [placementCoords, setPlacementCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [photoPath, setPhotoPath] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
   const successRef = useRef<HTMLElement | null>(null)
+  const reorderAppliedRef = useRef(false)
+
+  // "Nochmal anfragen": restore a past request handed over from /konto via
+  // localStorage. Runs before the profile prefill (see below) and wins on
+  // the contact block, since these are the values the customer chose to
+  // repeat. Dates are intentionally NOT restored — a repeat needs fresh ones.
+  useEffect(() => {
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem("seyfarth-reorder")
+      if (raw) localStorage.removeItem("seyfarth-reorder")
+    } catch {
+      return
+    }
+    if (!raw) return
+    let p: Record<string, unknown>
+    try {
+      p = JSON.parse(raw)
+    } catch {
+      return
+    }
+    const restoredMode = typeof p.mode === "string" ? p.mode : ""
+    if (!["entsorgung", "baustoffe", "transport"].includes(restoredMode)) return
+    reorderAppliedRef.current = true
+    const loc = (p.location ?? {}) as Record<string, unknown>
+    const sel = (p.selection ?? {}) as Record<string, unknown>
+    const plc = (p.placement ?? {}) as Record<string, unknown>
+    const con = (p.contact ?? {}) as Record<string, unknown>
+    const str = (v: unknown, fallback = "") => (typeof v === "string" ? v : fallback)
+
+    setMode(restoredMode as ShopMode)
+    setPostalCode(str(loc.postalCode))
+    setCity(str(loc.city))
+    if (restoredMode === "entsorgung") {
+      setSelectedWasteId(str(sel.id))
+      if (str(sel.containerSize)) setContainerSize(str(sel.containerSize))
+    } else if (restoredMode === "baustoffe") {
+      setSelectedMaterialId(str(sel.id))
+      const q = (sel.quantity ?? {}) as Record<string, unknown>
+      if (typeof q.value === "number") setQuantity(String(q.value))
+    } else {
+      setTransportDescription(str(sel.description))
+    }
+    if (["private", "public"].includes(str(plc.type))) setPlacement(str(plc.type) as PlacementType)
+    setContact((current) => ({
+      ...current,
+      customerType: str(con.customerType, current.customerType) === "business" ? "business" : "private",
+      firstName: str(con.firstName, current.firstName),
+      lastName: str(con.lastName, current.lastName),
+      company: str(con.company, current.company),
+      email: str(con.email, current.email),
+      phone: str(con.phone, current.phone),
+      street: str(con.street, current.street),
+      postalCode: str(con.postalCode, current.postalCode),
+      city: str(con.city, current.city),
+      message: str(con.message, current.message),
+    }))
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!active || !data.user?.email) return
+      setLoggedInEmail(data.user.email)
+      setLoggedInUserId(data.user.id)
+      // Load the customer's saved construction sites so they can pick one in
+      // the location step instead of typing an address.
+      supabase
+        .from("construction_sites")
+        .select("*")
+        .eq("is_archived", false)
+        .order("created_at", { ascending: false })
+        .then(({ data: siteRows }) => {
+          if (active && siteRows) setSites(siteRows)
+        })
+      // Prefill the contact step from the saved profile so returning
+      // customers don't retype their details ("schnell bestellen"). Skipped
+      // when a reorder already restored the contact block (that wins).
+      if (reorderAppliedRef.current) return
+      const { data: profile } = await supabase
+        .from("customer_profiles")
+        .select("customer_kind, first_name, last_name, company_name, phone, street, house_number, postal_code, city")
+        .eq("id", data.user.id)
+        .single()
+      if (!active || !profile || reorderAppliedRef.current) return
+      setContact((current) => ({
+        ...current,
+        customerType: profile.customer_kind === "business" ? "business" : "private",
+        firstName: profile.first_name ?? current.firstName,
+        lastName: profile.last_name ?? current.lastName,
+        company: profile.company_name ?? current.company,
+        email: data.user.email ?? current.email,
+        phone: profile.phone ?? current.phone,
+        street: [profile.street, profile.house_number].filter(Boolean).join(" ") || current.street,
+        postalCode: profile.postal_code ?? current.postalCode,
+        city: profile.city ?? current.city,
+      }))
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const selectSite = (site: ConstructionSite) => {
+    setSelectedSiteId(site.id)
+    setPostalCode(site.postal_code ?? "")
+    setCity(site.city ?? "")
+    setAutoFilledCity(null)
+    setContact((current) => ({
+      ...current,
+      street: [site.street, site.house_number].filter(Boolean).join(" ") || current.street,
+      postalCode: site.postal_code ?? current.postalCode,
+      city: site.city ?? current.city,
+    }))
+  }
+
+  const useNewAddress = () => {
+    setSelectedSiteId(null)
+    setPostalCode("")
+    setCity("")
+    setAutoFilledCity(null)
+  }
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!loggedInUserId) return
+    setPhotoError(null)
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("Bitte laden Sie eine Bilddatei hoch.")
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setPhotoError("Das Bild darf höchstens 10 MB groß sein.")
+      return
+    }
+    setPhotoUploading(true)
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg"
+      // Path must start with the user id — the storage RLS keys on that folder.
+      const path = `${loggedInUserId}/${crypto.randomUUID()}.${ext}`
+      const { error: uploadError } = await createClient().storage.from("placement-photos").upload(path, file, { upsert: false })
+      if (uploadError) throw uploadError
+      setPhotoPath(path)
+    } catch {
+      setPhotoError("Das Bild konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.")
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  const checkEmailAccount = async () => {
+    if (loggedInEmail || !REGISTRATION_ENABLED) return
+    if (!EMAIL_RE.test(contact.email)) {
+      setEmailAccountState("idle")
+      return
+    }
+    setEmailAccountState("checking")
+    try {
+      const { data, error: rpcError } = await createClient().rpc("email_has_account", { check_email: contact.email })
+      if (rpcError) throw rpcError
+      setEmailAccountState(data ? "exists" : "new")
+    } catch {
+      // Conservative fallback: treat as a new account. A genuine duplicate
+      // still gets caught by signUp() itself at submit time.
+      setEmailAccountState("new")
+    }
+  }
 
   const zoneMatch = useMemo(() => lookupZone(postalCode, city), [postalCode, city])
   const selectedWaste = wasteItems.find((item) => item.id === selectedWasteId)
@@ -143,7 +338,19 @@ export function SeyfarthConfigurator() {
       case "container": return mode === "baustoffe" ? materialQuantity > 0 : !!containerSize
       case "placement": return !!placement && (placement !== "public" || permitAccepted) && (!selectedWaste?.isHazardous || safetyAccepted)
       case "dates": return !!deliveryDate || dateFlexibility === "telefonisch abstimmen"
-      case "contact": return !!(contact.name && contact.email && contact.phone && contact.street && contact.postalCode && contact.city)
+      case "contact": {
+        const baseOk = !!(contact.firstName && contact.lastName && contact.email && contact.phone && contact.street && contact.postalCode && contact.city)
+        if (!baseOk) return false
+        if (loggedInEmail) return true
+        // Registration off (e.g. PROD until SMTP): everyone submits as guest;
+        // business only still needs a company name, never a password.
+        if (!REGISTRATION_ENABLED) return contact.customerType !== "business" || !!contact.company
+        if (emailAccountState === "checking") return false
+        if (emailAccountState === "exists") return password.length > 0
+        if (contact.customerType === "business") return !!contact.company && password.length >= 8
+        if (wantsAccount) return password.length >= 8
+        return true
+      }
       case "summary": return privacyAccepted
       default: return false
     }
@@ -157,7 +364,16 @@ export function SeyfarthConfigurator() {
       case "container": return mode === "baustoffe" ? "Bitte geben Sie die gewünschte Menge ein." : "Bitte wählen Sie eine Containergröße aus – auch „Ich bin unsicher“ ist möglich."
       case "placement": return "Bitte wählen Sie den Stellplatz und bestätigen Sie erforderliche Hinweise."
       case "dates": return "Bitte nennen Sie ein Wunschdatum oder wählen Sie telefonische Abstimmung."
-      case "contact": return "Bitte füllen Sie die Pflichtfelder für die Kontaktaufnahme aus."
+      case "contact": {
+        if (!REGISTRATION_ENABLED) {
+          if (contact.customerType === "business" && !contact.company) return "Bitte geben Sie den Firmennamen an."
+          return "Bitte füllen Sie die Pflichtfelder für die Kontaktaufnahme aus."
+        }
+        if (emailAccountState === "checking") return "Wir prüfen kurz Ihre E-Mail-Adresse …"
+        if (emailAccountState === "exists" && !loggedInEmail) return "Diese E-Mail ist bereits registriert – bitte Passwort eingeben, um sich anzumelden."
+        if (!loggedInEmail && contact.customerType === "business") return "Für Gewerbekunden sind Firma und ein Kundenkonto (Passwort) erforderlich."
+        return "Bitte füllen Sie die Pflichtfelder für die Kontaktaufnahme aus."
+      }
       case "summary": return "Bitte bestätigen Sie die Datenschutzhinweise."
       default: return "Bitte vervollständigen Sie die Angaben."
     }
@@ -168,6 +384,44 @@ export function SeyfarthConfigurator() {
     if (!privacyAccepted) return
     setSubmitting(true)
     setError(null)
+
+    if (!loggedInEmail && REGISTRATION_ENABLED) {
+      const supabase = createClient()
+      try {
+        if (emailAccountState === "exists") {
+          const { error: authError } = await supabase.auth.signInWithPassword({ email: contact.email, password })
+          if (authError) throw new Error("Anmeldung fehlgeschlagen: falsches Passwort oder unbekannte E-Mail-Adresse.")
+        } else if (contact.customerType === "business" || wantsAccount) {
+          const registrationErrors = validateRegistration({
+            customerKind: contact.customerType === "business" ? "business" : "private",
+            email: contact.email,
+            password,
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            companyName: contact.company,
+          })
+          if (registrationErrors.length > 0) throw new Error(registrationErrors[0].message)
+          const { error: authError } = await supabase.auth.signUp({
+            email: contact.email,
+            password,
+            options: {
+              data: {
+                customer_kind: contact.customerType,
+                first_name: contact.firstName || null,
+                last_name: contact.lastName || null,
+                company_name: contact.company || null,
+              },
+            },
+          })
+          if (authError) throw new Error(authError.message)
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Konto konnte nicht angelegt bzw. Anmeldung nicht durchgeführt werden.")
+        setSubmitting(false)
+        return
+      }
+    }
+
     const payload = {
       requestFormVersion: REQUEST_FORM_VERSION,
       mode,
@@ -176,16 +430,18 @@ export function SeyfarthConfigurator() {
       selection: mode === "entsorgung" ? selectedWaste : mode === "baustoffe" ? selectedMaterial : { description: transportDescription },
       containerSize: mode === "entsorgung" ? containerSize : undefined,
       quantity: mode === "baustoffe" ? { value: materialQuantity, unit: selectedMaterial?.unit } : undefined,
-      placement: { type: placement, permitAccepted, safetyAccepted },
+      placement: { type: placement, permitAccepted, safetyAccepted, coordinates: placementCoords, photoPath },
       dates: { deliveryDate, pickupDate, flexibility: dateFlexibility },
       pricing: { transportNet: transportPrice, materialNet, materialTotalNet, wasteDisposalNetPerUnit: selectedWaste?.netPrice, finalByWeighing: selectedWaste?.requiresWeighing },
       contact,
+      constructionSiteId: selectedSiteId,
       confirmations: { privacyAccepted, submittedNoticeVersion: REQUEST_FORM_VERSION },
     }
 
     try {
       const response = await fetch("/api/shop-requests", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
@@ -285,9 +541,46 @@ export function SeyfarthConfigurator() {
 
               {step === "location" && (
                 <StepBlock title="Wo soll der Container stehen oder Material geliefert werden?" intro="Mit PLZ und Ort prüfen wir, ob Ihr Standort im Liefergebiet liegt und welche Transportzone gilt.">
+                  {sites.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Ihre Baustellen &amp; Standorte</p>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {sites.map((site) => (
+                          <button
+                            key={site.id}
+                            type="button"
+                            onClick={() => selectSite(site)}
+                            aria-pressed={selectedSiteId === site.id}
+                            className={cx(
+                              "flex items-start gap-3 rounded-2xl border p-3 text-left transition hover:border-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                              selectedSiteId === site.id ? "border-seyfarth-blue bg-seyfarth-blue/5 shadow-sm" : "border-zinc-200 bg-white",
+                            )}
+                          >
+                            <MapPin className={cx("mt-0.5 h-5 w-5 shrink-0", selectedSiteId === site.id ? "text-seyfarth-blue" : "text-zinc-400")} />
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-semibold text-seyfarth-navy">{site.name}</span>
+                              <span className="block truncate text-xs text-zinc-500">{[[site.street, site.house_number].filter(Boolean).join(" "), [site.postal_code, site.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</span>
+                            </span>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={useNewAddress}
+                          aria-pressed={selectedSiteId === null}
+                          className={cx(
+                            "flex items-center gap-3 rounded-2xl border border-dashed p-3 text-left text-sm font-medium transition hover:border-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                            selectedSiteId === null ? "border-seyfarth-blue bg-seyfarth-blue/5 text-seyfarth-navy" : "border-zinc-300 bg-white text-zinc-500",
+                          )}
+                        >
+                          <MapPin className="h-5 w-5 shrink-0 text-zinc-400" />
+                          Andere / neue Adresse eingeben
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="grid gap-4 md:grid-cols-2">
-                    <Field label="Postleitzahl"><input value={postalCode} onChange={(e) => { setPostalCode(e.target.value); updateContact("postalCode", e.target.value) }} className="sey-input" inputMode="numeric" autoComplete="postal-code" placeholder="z. B. 04639" /></Field>
-                    <Field label="Ort"><input value={city} onChange={(e) => { setCity(e.target.value); setAutoFilledCity(null); updateContact("city", e.target.value) }} className="sey-input" autoComplete="address-level2" placeholder="wird nach PLZ automatisch ergänzt" /></Field>
+                    <Field label="Postleitzahl"><input value={postalCode} onChange={(e) => { setPostalCode(e.target.value); setSelectedSiteId(null); updateContact("postalCode", e.target.value) }} className="sey-input" inputMode="numeric" autoComplete="postal-code" placeholder="z. B. 04639" /></Field>
+                    <Field label="Ort"><input value={city} onChange={(e) => { setCity(e.target.value); setAutoFilledCity(null); setSelectedSiteId(null); updateContact("city", e.target.value) }} className="sey-input" autoComplete="address-level2" placeholder="wird nach PLZ automatisch ergänzt" /></Field>
                   </div>
                   {zoneMatch && (
                     <Notice tone="success">
@@ -379,6 +672,44 @@ export function SeyfarthConfigurator() {
                   </div>
                   {placement === "public" && <Checkbox checked={permitAccepted} onChange={setPermitAccepted}>Mir ist bewusst, dass für öffentliche Flächen eine Genehmigung erforderlich sein kann. Seyfarth prüft die nächsten Schritte mit mir.</Checkbox>}
                   {selectedWaste?.isHazardous && <Checkbox checked={safetyAccepted} onChange={setSafetyAccepted}>Ich habe die Hinweise zu gefährlichen Stoffen, Verpackung und Annahmebedingungen gelesen.</Checkbox>}
+
+                  {placement && placement !== "unknown" && (
+                    <div className="space-y-3 rounded-2xl border border-zinc-100 bg-zinc-50/60 p-4">
+                      <p className="text-sm font-semibold text-seyfarth-navy">Genauer Abstellort (optional)</p>
+                      <p className="text-sm text-zinc-500">
+                        Setzen Sie den Punkt exakt dorthin, wo der Container stehen soll. Das hilft unserer Disposition bei der Anfahrt.
+                      </p>
+                      <PlacementMap value={placementCoords} onChange={setPlacementCoords} />
+                      {placementCoords && (
+                        <p className="text-xs text-zinc-500">
+                          Position gesetzt: {placementCoords.lat.toFixed(5)}, {placementCoords.lng.toFixed(5)}
+                        </p>
+                      )}
+
+                      {loggedInEmail ? (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-seyfarth-navy">Foto vom Stellplatz (optional)</p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={photoUploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handlePhotoUpload(file)
+                            }}
+                            className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-seyfarth-blue/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-seyfarth-blue"
+                          />
+                          {photoUploading && <p className="text-xs text-zinc-500">Bild wird hochgeladen …</p>}
+                          {photoPath && !photoUploading && <p className="text-xs text-emerald-600">Foto hochgeladen.</p>}
+                          {photoError && <p className="text-xs text-destructive">{photoError}</p>}
+                        </div>
+                      ) : REGISTRATION_ENABLED ? (
+                        <p className="text-xs text-zinc-500">
+                          Mit einem Kundenkonto können Sie zusätzlich ein Foto des Stellplatzes hochladen.
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
                 </StepBlock>
               )}
 
@@ -396,15 +727,41 @@ export function SeyfarthConfigurator() {
                 <StepBlock title="Wohin dürfen wir das Angebot senden?" intro="Wir nutzen Ihre Angaben nur zur Bearbeitung dieser Anfrage.">
                   <div className="grid gap-4 md:grid-cols-2">
                     <Field label="Kundentyp"><select value={contact.customerType} onChange={(e) => updateContact("customerType", e.target.value)} className="sey-input"><option value="private">Privat</option><option value="business">Gewerblich</option></select></Field>
-                    <Field label="Name"><input value={contact.name} onChange={(e) => updateContact("name", e.target.value)} className="sey-input" /></Field>
-                    <Field label="Firma, falls gewerblich"><input value={contact.company} onChange={(e) => updateContact("company", e.target.value)} className="sey-input" /></Field>
-                    <Field label="E-Mail"><input type="email" value={contact.email} onChange={(e) => updateContact("email", e.target.value)} className="sey-input" /></Field>
+                    <Field label="Vorname"><input value={contact.firstName} onChange={(e) => updateContact("firstName", e.target.value)} className="sey-input" /></Field>
+                    <Field label="Nachname"><input value={contact.lastName} onChange={(e) => updateContact("lastName", e.target.value)} className="sey-input" /></Field>
+                    <Field label={contact.customerType === "business" ? "Firma" : "Firma, falls gewerblich"}><input value={contact.company} onChange={(e) => updateContact("company", e.target.value)} className="sey-input" /></Field>
+                    <Field label="E-Mail"><input type="email" value={contact.email} onChange={(e) => updateContact("email", e.target.value)} onBlur={checkEmailAccount} className="sey-input" /></Field>
                     <Field label="Telefon"><input value={contact.phone} onChange={(e) => updateContact("phone", e.target.value)} className="sey-input" /></Field>
                     <Field label="Straße und Hausnummer"><input value={contact.street} onChange={(e) => updateContact("street", e.target.value)} className="sey-input" /></Field>
                     <Field label="PLZ"><input value={contact.postalCode} onChange={(e) => updateContact("postalCode", e.target.value)} className="sey-input" /></Field>
                     <Field label="Ort"><input value={contact.city} onChange={(e) => updateContact("city", e.target.value)} className="sey-input" /></Field>
                   </div>
                   <Field label="Hinweise zur Baustelle, Zufahrt oder Abfallart"><textarea value={contact.message} onChange={(e) => updateContact("message", e.target.value)} className="sey-input min-h-24" /></Field>
+
+                  {!REGISTRATION_ENABLED ? (
+                    loggedInEmail ? (
+                      <Notice tone="success">Angemeldet als {loggedInEmail}. Diese Anfrage erscheint in Ihrem Kundenkonto.</Notice>
+                    ) : null
+                  ) : loggedInEmail ? (
+                    <Notice tone="success">Angemeldet als {loggedInEmail}. Diese Anfrage erscheint in Ihrem Kundenkonto.</Notice>
+                  ) : emailAccountState === "exists" ? (
+                    <div className="space-y-3">
+                      <Notice tone="warning">Diese E-Mail-Adresse ist bereits registriert. Bitte melden Sie sich an, um die Anfrage Ihrem Konto zuzuordnen.</Notice>
+                      <Field label="Passwort"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="sey-input" /></Field>
+                    </div>
+                  ) : contact.customerType === "business" ? (
+                    <div className="space-y-3">
+                      <Notice tone="warning">Für Gewerbekunden ist ein Kundenkonto erforderlich, damit Anfragen und spätere Aufträge zugeordnet werden können.</Notice>
+                      <Field label="Passwort (mind. 8 Zeichen)"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="sey-input" /></Field>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Checkbox checked={wantsAccount} onChange={setWantsAccount}>Kundenkonto anlegen (optional) — damit sehen Sie diese und künftige Anfragen in Ihrem Konto.</Checkbox>
+                      {wantsAccount && (
+                        <Field label="Passwort (mind. 8 Zeichen)"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="sey-input" /></Field>
+                      )}
+                    </div>
+                  )}
                 </StepBlock>
               )}
 

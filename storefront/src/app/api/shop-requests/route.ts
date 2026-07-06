@@ -1,6 +1,6 @@
-import { appendFile, mkdir } from "node:fs/promises"
-import { dirname } from "node:path"
 import { NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
+import type { Json } from "@/lib/supabase/types"
 import { REQUEST_FORM_VERSION, containerSizes, materialItems, wasteItems, type ShopMode } from "@/lib/seyfarth-shop-data"
 
 export const runtime = "nodejs"
@@ -68,14 +68,8 @@ function parseDate(value: unknown) {
 }
 
 function rejectUnexpectedTopLevelKeys(payload: Record<string, unknown>) {
-  const allowed = new Set(["requestFormVersion", "mode", "intent", "location", "selection", "containerSize", "quantity", "placement", "dates", "pricing", "contact", "confirmations", "website"])
+  const allowed = new Set(["requestFormVersion", "mode", "intent", "location", "selection", "containerSize", "quantity", "placement", "dates", "pricing", "contact", "constructionSiteId", "confirmations", "website"])
   return Object.keys(payload).filter((key) => !allowed.has(key))
-}
-
-async function persistRequest(entry: Record<string, unknown>) {
-  const filePath = process.env.SEYFARTH_REQUEST_LOG_PATH || "/tmp/seyfarth-shop-requests.jsonl"
-  await mkdir(dirname(filePath), { recursive: true })
-  await appendFile(filePath, `${JSON.stringify(entry)}\n`, { encoding: "utf8", mode: 0o600 })
 }
 
 export async function POST(request: NextRequest) {
@@ -110,7 +104,9 @@ export async function POST(request: NextRequest) {
   }
 
   const contact = getObject(payload.contact)
-  const name = cleanString(contact.name)
+  const firstName = cleanString(contact.firstName)
+  const lastName = cleanString(contact.lastName)
+  const customerType = cleanString(contact.customerType, 16) === "business" ? "business" : "private"
   const company = cleanString(contact.company)
   const email = cleanString(contact.email).toLowerCase()
   const phone = cleanString(contact.phone)
@@ -123,8 +119,11 @@ export async function POST(request: NextRequest) {
   if (!ALLOWED_MODES.includes(mode as ShopMode)) {
     return json("Bitte wählen Sie einen Bereich aus.", 422)
   }
-  if (!name || !EMAIL_RE.test(email) || !PHONE_RE.test(phone) || !street || !POSTAL_CODE_RE.test(postalCode) || !city) {
+  if (!firstName || !lastName || !EMAIL_RE.test(email) || !PHONE_RE.test(phone) || !street || !POSTAL_CODE_RE.test(postalCode) || !city) {
     return json("Bitte füllen Sie alle Pflichtfelder korrekt aus.", 422)
+  }
+  if (customerType === "business" && !company) {
+    return json("Bitte geben Sie einen Firmennamen an.", 422)
   }
 
   const confirmations = getObject(payload.confirmations)
@@ -143,6 +142,15 @@ export async function POST(request: NextRequest) {
   if (placementType === "public" && !getBoolean(placement.permitAccepted)) {
     return json("Bitte bestätigen Sie den Hinweis zur öffentlichen Stellfläche.", 422)
   }
+
+  // Exact placement pin + optional uploaded photo (see placement-map /
+  // placement-photos bucket). Coordinates are bounded to plausible values;
+  // the photo path is only trusted to point into the caller's own folder.
+  const rawCoords = getObject(placement.coordinates)
+  const lat = typeof rawCoords.lat === "number" && rawCoords.lat >= -90 && rawCoords.lat <= 90 ? rawCoords.lat : null
+  const lng = typeof rawCoords.lng === "number" && rawCoords.lng >= -180 && rawCoords.lng <= 180 ? rawCoords.lng : null
+  const placementCoordinates = lat !== null && lng !== null ? { lat, lng } : null
+  const placementPhotoPath = cleanString(placement.photoPath, 200) || null
 
   const location = getObject(payload.location)
   const locationPostalCode = cleanString(location.postalCode)
@@ -204,7 +212,6 @@ export async function POST(request: NextRequest) {
   const entry = {
     requestId,
     receivedAt,
-    status: "received",
     source: "seyfarth-shop",
     requestFormVersion: REQUEST_FORM_VERSION,
     mode,
@@ -220,20 +227,59 @@ export async function POST(request: NextRequest) {
       type: placementType,
       permitAccepted: getBoolean(placement.permitAccepted),
       safetyAccepted: getBoolean(placement.safetyAccepted),
+      coordinates: placementCoordinates,
+      photoPath: placementPhotoPath,
     },
     dates: sanitizedDates,
-    contact: { name, company, email, phone, street, postalCode, city, message },
+    contact: { customerType, firstName, lastName, company, email, phone, street, postalCode, city, message },
     confirmations: {
       privacyAccepted: true,
       submittedNoticeVersion: cleanString(confirmations.submittedNoticeVersion, 80),
     },
   }
 
-  try {
-    await persistRequest(entry)
-  } catch {
+  // Uses the caller's own session (cookie-bound) so RLS enforces that a
+  // request can only ever be attributed to the signed-in user themselves —
+  // never to an arbitrary customer_id. Guests (no session) get null.
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Only a logged-in customer can attach a construction site; RLS additionally
+  // rejects a site the caller doesn't own (see construction_sites migration).
+  const rawSiteId = cleanString(payload.constructionSiteId, 64)
+  const constructionSiteId = user && rawSiteId ? rawSiteId : null
+
+  const { error: insertError } = await supabase.from("shop_requests").insert({
+    reference: requestId,
+    customer_id: user?.id ?? null,
+    construction_site_id: constructionSiteId,
+    mode,
+    request_form_version: REQUEST_FORM_VERSION,
+    payload: entry as unknown as Json,
+  })
+  if (insertError) {
     return json("Die Anfrage konnte technisch nicht gespeichert werden. Bitte rufen Sie uns an oder versuchen Sie es später erneut.", 503)
   }
+
+  // Best-effort notifications — never fail the request if mail is down or the
+  // SMTP settings aren't configured yet. Notify Seyfarth and confirm to the
+  // customer using the admin-managed SMTP settings.
+  const modeLabel = mode === "entsorgung" ? "Entsorgung" : mode === "baustoffe" ? "Baustoffe" : "Transport"
+  const operator = cleanString(process.env.OPERATOR_EMAIL, 200)
+  const summary = `Referenz: ${requestId}\nBereich: ${modeLabel}\nOrt: ${entry.location.postalCode} ${entry.location.city}\nKunde: ${firstName} ${lastName}${company ? ` (${company})` : ""}\nE-Mail: ${email}\nTelefon: ${phone}\nAdresse: ${street}, ${postalCode} ${city}`
+  void (async () => {
+    try {
+      const { sendMail } = await import("@/lib/email")
+      if (operator) {
+        await sendMail({ to: operator, subject: `Neue Anfrage ${requestId} (${modeLabel})`, text: `Es ist eine neue Anfrage über den Onlineshop eingegangen.\n\n${summary}${message ? `\n\nNachricht:\n${message}` : ""}` })
+      }
+      await sendMail({ to: email, subject: `Ihre Anfrage bei Seyfarth (${requestId})`, text: `Vielen Dank für Ihre Anfrage. Wir prüfen Ihre Angaben persönlich und melden uns zur Bestätigung von Preis, Termin und Verfügbarkeit.\n\n${summary}\n\nMit dem Absenden entstehen keine Kosten.\n\nContainerdienst Seyfarth` })
+    } catch {
+      // swallow — notifications are non-critical
+    }
+  })()
 
   return NextResponse.json({
     requestId,
