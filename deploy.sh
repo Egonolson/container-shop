@@ -25,11 +25,16 @@ case "$TARGET" in
   dev)
     HOST="$DEV_HOST"
     ENV_FILE=".env.dev"
+    # Self-hosted Supabase (Auth/DB/REST/Storage) is DEV-only for now — see
+    # release plan R0/R1. PROD does not have SUPABASE_* secrets yet, so its
+    # compose invocation below intentionally does NOT activate this profile.
+    PROFILE_FLAG="--profile supabase"
     echo "🚀 Deploying to DEV ($DEV_HOST)..."
     ;;
   prod)
     HOST="$PROD_HOST"
     ENV_FILE=".env.prod"
+    PROFILE_FLAG="--profile prod"
     if [ ! -f ".env.prod" ]; then
       echo "❌ .env.prod not found! Copy .env.prod.template and fill in real values."
       exit 1
@@ -57,16 +62,27 @@ rsync -az --delete \
 echo "🔐 Copying env file..."
 scp "$ENV_FILE" "$HOST:$REPO_DIR/.env"
 
+if [ "$TARGET" = "dev" ]; then
+  echo "🔧 Generating kong.yml from template..."
+  ssh "$HOST" "cd $REPO_DIR && bash supabase/kong/generate-kong.sh"
+fi
+
 # 3. Build & start
 echo "🐳 Building and starting containers..."
 ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env pull --ignore-pull-failures 2>/dev/null; true"
 ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env build --no-cache"
 
-if [ "$TARGET" = "prod" ]; then
-  ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env --profile prod up -d --remove-orphans"
-else
-  ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env up -d --remove-orphans"
+if [ "$TARGET" = "dev" ]; then
+  # Supabase Postgres needs to be up (and password/ownership-fixed, see
+  # bootstrap.sh) before auth/rest/storage can connect successfully — start
+  # it first, bootstrap, then bring up the rest of the stack.
+  echo "🐘 Starting seyfarth-db first (supabase profile)..."
+  ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env $PROFILE_FLAG up -d seyfarth-db"
+  echo "🔧 Bootstrapping database (idempotent)..."
+  ssh "$HOST" "cd $REPO_DIR && bash supabase/db/bootstrap.sh"
 fi
+
+ssh "$HOST" "cd $REPO_DIR && docker compose -f $COMPOSE_FILE --env-file .env $PROFILE_FLAG up -d --remove-orphans"
 
 # 4. Wait for storefront
 echo "⏳ Waiting for Storefront to be ready..."

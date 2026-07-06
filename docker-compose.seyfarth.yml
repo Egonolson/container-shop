@@ -16,6 +16,10 @@ networks:
 volumes:
   seyfarth-request-data:
     name: seyfarth-request-data
+  seyfarth-db-data:
+    name: seyfarth-db-data
+  seyfarth-storage-data:
+    name: seyfarth-storage-data
 
 services:
   # --- Next.js Storefront / Anfrage-Konfigurator ---
@@ -26,6 +30,8 @@ services:
       args:
         NEXT_PUBLIC_MAIN_WEBSITE_URL: ${MAIN_WEBSITE_URL:-https://www.containerdienst-seyfarth.de}
         NEXT_PUBLIC_SITE_URL: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}
     image: seyfarth-storefront:${IMAGE_TAG:-latest}
     container_name: seyfarth-storefront
     restart: unless-stopped
@@ -72,3 +78,132 @@ services:
     depends_on:
       seyfarth-storefront:
         condition: service_started
+
+  # ============================================================
+  # Self-hosted Supabase (Auth/DB/REST/Storage) — R1 Portal-Fundament.
+  # Nur aktiv mit `--profile supabase` (siehe deploy.sh, aktuell nur DEV).
+  # Kein eigener öffentlicher Port: seyfarth-nginx proxyt /auth/v1, /rest/v1,
+  # /storage/v1 same-origin zu Kong (Single-Port-Architektur).
+  # ============================================================
+
+  seyfarth-db:
+    image: supabase/postgres:15.1.1.78
+    container_name: seyfarth-db
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    environment:
+      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:-}
+      POSTGRES_DB: postgres
+      JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+      JWT_EXP: 3600
+    volumes:
+      - seyfarth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    profiles: ["supabase"]
+
+  seyfarth-auth:
+    image: supabase/gotrue:v2.143.0
+    container_name: seyfarth-auth
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    depends_on:
+      seyfarth-db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}
+      GOTRUE_SITE_URL: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}
+      GOTRUE_URI_ALLOW_LIST: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}/**
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_DB_DRIVER: postgres
+      DATABASE_URL: postgres://supabase_auth_admin:${SUPABASE_DB_PASSWORD:-}@seyfarth-db:5432/postgres
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      # TEMPORARY: SMTP_USER/SMTP_PASS in .env.dev are still empty placeholders
+      # (real SMTP creds are a separate, already-tracked workstream — see
+      # release plan, mail deliverability gate). Autoconfirm stays on until
+      # those are provisioned; then flip to "false" so DEV mirrors the
+      # intended PROD confirmation flow (see registrieren/actions.ts comment).
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SMTP_USER:-}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_FROM_NAME:-Containerdienst Seyfarth}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_FROM:-}
+    profiles: ["supabase"]
+
+  seyfarth-rest:
+    image: postgrest/postgrest:v12.0.2
+    container_name: seyfarth-rest
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    depends_on:
+      seyfarth-db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${SUPABASE_DB_PASSWORD:-}@seyfarth-db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+    profiles: ["supabase"]
+
+  seyfarth-storage:
+    image: supabase/storage-api:v0.46.4
+    container_name: seyfarth-storage
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    depends_on:
+      seyfarth-db:
+        condition: service_healthy
+      seyfarth-rest:
+        condition: service_started
+    environment:
+      ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      POSTGREST_URL: http://seyfarth-rest:3000
+      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+      DATABASE_URL: postgres://supabase_storage_admin:${SUPABASE_DB_PASSWORD:-}@seyfarth-db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: seyfarth
+      REGION: local
+      GLOBAL_S3_BUCKET: unused
+    volumes:
+      - seyfarth-storage-data:/var/lib/storage
+    profiles: ["supabase"]
+
+  seyfarth-kong:
+    image: kong:2.8.1
+    container_name: seyfarth-kong
+    restart: unless-stopped
+    networks: [seyfarth-net]
+    depends_on:
+      seyfarth-auth:
+        condition: service_started
+      seyfarth-rest:
+        condition: service_started
+      seyfarth-storage:
+        condition: service_started
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+    volumes:
+      - ./supabase/kong/kong.yml:/kong.yml:ro
+    profiles: ["supabase"]
