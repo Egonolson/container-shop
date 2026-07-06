@@ -1,6 +1,6 @@
 # ADR 0001: Supabase self-hosted als Backend für den Portal-Ausbau
 
-**Status:** Vorgeschlagen — wartet auf Freigabe durch Sebastian (Gate: Architektur-Entscheidung laut Release-Plan R0)
+**Status:** Angenommen — Architektur-Entscheidung freigegeben durch Sebastian am 2026-07-03. Deployment auf DEV folgt erst nach der Orphan-Prüfung (siehe Freigabe-Status unten).
 **Datum:** 2026-07-03
 **Bezug:** [Release-Plan Portal-/ERP-Ausbau](../plans/2026-07-03-release-plan-portal-erp-ausbau.md), Kapitel 2 (Architektur-Zielbild) und Kapitel 3, R0
 
@@ -40,6 +40,6 @@ Der Seyfarth-Shop läuft heute als reine Next.js-Anfragestrecke ohne Datenbank u
 
 ## Freigabe-Status
 
-- [ ] Sebastian hat diese ADR gegengelesen und freigegeben (Gate lt. Release-Plan R0)
-- [ ] `seyfarth-postgres`-Orphan-Prüfung auf `hetzner-prod` ist erledigt
+- [x] Sebastian hat diese ADR gegengelesen und freigegeben (2026-07-03, "passt so")
+- [ ] `seyfarth-postgres`-Orphan-Prüfung auf `hetzner-prod` ist erledigt — braucht Server-Zugriff, noch offen
 - [ ] Erst nach beidem: tatsächliches Deployment des Supabase-Stacks auf DEV
