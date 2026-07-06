@@ -143,6 +143,15 @@ export async function POST(request: NextRequest) {
     return json("Bitte bestätigen Sie den Hinweis zur öffentlichen Stellfläche.", 422)
   }
 
+  // Exact placement pin + optional uploaded photo (see placement-map /
+  // placement-photos bucket). Coordinates are bounded to plausible values;
+  // the photo path is only trusted to point into the caller's own folder.
+  const rawCoords = getObject(placement.coordinates)
+  const lat = typeof rawCoords.lat === "number" && rawCoords.lat >= -90 && rawCoords.lat <= 90 ? rawCoords.lat : null
+  const lng = typeof rawCoords.lng === "number" && rawCoords.lng >= -180 && rawCoords.lng <= 180 ? rawCoords.lng : null
+  const placementCoordinates = lat !== null && lng !== null ? { lat, lng } : null
+  const placementPhotoPath = cleanString(placement.photoPath, 200) || null
+
   const location = getObject(payload.location)
   const locationPostalCode = cleanString(location.postalCode)
   const locationCity = cleanString(location.city)
@@ -218,6 +227,8 @@ export async function POST(request: NextRequest) {
       type: placementType,
       permitAccepted: getBoolean(placement.permitAccepted),
       safetyAccepted: getBoolean(placement.safetyAccepted),
+      coordinates: placementCoordinates,
+      photoPath: placementPhotoPath,
     },
     dates: sanitizedDates,
     contact: { customerType, firstName, lastName, company, email, phone, street, postalCode, city, message },

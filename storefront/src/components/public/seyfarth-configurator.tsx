@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import {
   AlertTriangle,
@@ -22,6 +23,12 @@ import type { Database } from "@/lib/supabase/types"
 import { validateRegistration } from "@/lib/auth/validate-registration"
 
 type ConstructionSite = Database["public"]["Tables"]["construction_sites"]["Row"]
+
+// Leaflet touches window/document, so the map only loads in the browser.
+const PlacementMap = dynamic(() => import("./placement-map"), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full animate-pulse rounded-2xl bg-zinc-100" />,
+})
 import {
   REQUEST_FORM_VERSION,
   ShopMode,
@@ -98,8 +105,13 @@ export function SeyfarthConfigurator() {
   const [wantsAccount, setWantsAccount] = useState(false)
   const [emailAccountState, setEmailAccountState] = useState<EmailAccountState>("idle")
   const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null)
+  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null)
   const [sites, setSites] = useState<ConstructionSite[]>([])
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null)
+  const [placementCoords, setPlacementCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [photoPath, setPhotoPath] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
   const successRef = useRef<HTMLElement | null>(null)
   const reorderAppliedRef = useRef(false)
 
@@ -166,6 +178,7 @@ export function SeyfarthConfigurator() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!active || !data.user?.email) return
       setLoggedInEmail(data.user.email)
+      setLoggedInUserId(data.user.id)
       // Load the customer's saved construction sites so they can pick one in
       // the location step instead of typing an address.
       supabase
@@ -222,6 +235,32 @@ export function SeyfarthConfigurator() {
     setPostalCode("")
     setCity("")
     setAutoFilledCity(null)
+  }
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!loggedInUserId) return
+    setPhotoError(null)
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("Bitte laden Sie eine Bilddatei hoch.")
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setPhotoError("Das Bild darf höchstens 10 MB groß sein.")
+      return
+    }
+    setPhotoUploading(true)
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg"
+      // Path must start with the user id — the storage RLS keys on that folder.
+      const path = `${loggedInUserId}/${crypto.randomUUID()}.${ext}`
+      const { error: uploadError } = await createClient().storage.from("placement-photos").upload(path, file, { upsert: false })
+      if (uploadError) throw uploadError
+      setPhotoPath(path)
+    } catch {
+      setPhotoError("Das Bild konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.")
+    } finally {
+      setPhotoUploading(false)
+    }
   }
 
   const checkEmailAccount = async () => {
@@ -383,7 +422,7 @@ export function SeyfarthConfigurator() {
       selection: mode === "entsorgung" ? selectedWaste : mode === "baustoffe" ? selectedMaterial : { description: transportDescription },
       containerSize: mode === "entsorgung" ? containerSize : undefined,
       quantity: mode === "baustoffe" ? { value: materialQuantity, unit: selectedMaterial?.unit } : undefined,
-      placement: { type: placement, permitAccepted, safetyAccepted },
+      placement: { type: placement, permitAccepted, safetyAccepted, coordinates: placementCoords, photoPath },
       dates: { deliveryDate, pickupDate, flexibility: dateFlexibility },
       pricing: { transportNet: transportPrice, materialNet, materialTotalNet, wasteDisposalNetPerUnit: selectedWaste?.netPrice, finalByWeighing: selectedWaste?.requiresWeighing },
       contact,
@@ -625,6 +664,44 @@ export function SeyfarthConfigurator() {
                   </div>
                   {placement === "public" && <Checkbox checked={permitAccepted} onChange={setPermitAccepted}>Mir ist bewusst, dass für öffentliche Flächen eine Genehmigung erforderlich sein kann. Seyfarth prüft die nächsten Schritte mit mir.</Checkbox>}
                   {selectedWaste?.isHazardous && <Checkbox checked={safetyAccepted} onChange={setSafetyAccepted}>Ich habe die Hinweise zu gefährlichen Stoffen, Verpackung und Annahmebedingungen gelesen.</Checkbox>}
+
+                  {placement && placement !== "unknown" && (
+                    <div className="space-y-3 rounded-2xl border border-zinc-100 bg-zinc-50/60 p-4">
+                      <p className="text-sm font-semibold text-seyfarth-navy">Genauer Abstellort (optional)</p>
+                      <p className="text-sm text-zinc-500">
+                        Setzen Sie den Punkt exakt dorthin, wo der Container stehen soll. Das hilft unserer Disposition bei der Anfahrt.
+                      </p>
+                      <PlacementMap value={placementCoords} onChange={setPlacementCoords} />
+                      {placementCoords && (
+                        <p className="text-xs text-zinc-500">
+                          Position gesetzt: {placementCoords.lat.toFixed(5)}, {placementCoords.lng.toFixed(5)}
+                        </p>
+                      )}
+
+                      {loggedInEmail ? (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-seyfarth-navy">Foto vom Stellplatz (optional)</p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={photoUploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handlePhotoUpload(file)
+                            }}
+                            className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-seyfarth-blue/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-seyfarth-blue"
+                          />
+                          {photoUploading && <p className="text-xs text-zinc-500">Bild wird hochgeladen …</p>}
+                          {photoPath && !photoUploading && <p className="text-xs text-emerald-600">Foto hochgeladen.</p>}
+                          {photoError && <p className="text-xs text-destructive">{photoError}</p>}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-500">
+                          Mit einem Kundenkonto können Sie zusätzlich ein Foto des Stellplatzes hochladen.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </StepBlock>
               )}
 
