@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test src/lib/seyfarth-shop-data.test.ts src/components/public/seyfarth-configurator.visual.test.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
