@@ -37,6 +37,13 @@ const stats = [
   { value: "Kostenlos", label: "Anfrage senden", icon: ClipboardCheck },
 ]
 
+const onepageImages = {
+  heroTruck: {
+    src: "https://onecdn.io/media/8d1f791e-5a8c-4962-bcc6-04dfd1e8d3d3/md2x",
+    alt: "Gelber Seyfarth-LKW mit blauem Abrollcontainer im Einsatz",
+  },
+}
+
 const faqs = [
   {
     question: "Entstehen Kosten, wenn ich eine Anfrage absende?",
@@ -110,7 +117,7 @@ export default function HomePage() {
           <div className="absolute -right-10 top-20 h-[300px] w-[300px] rounded-full bg-seyfarth-yellow/20 blur-3xl" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-6">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1fr)]">
           <div className="max-w-3xl">
             <p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-seyfarth-yellow">
               Containerdienst Seyfarth
@@ -137,6 +144,20 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
+
+          <figure className="relative hidden overflow-hidden rounded-[34px] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/20 lg:block">
+            <div className="absolute inset-3 rounded-[26px] bg-gradient-to-br from-white/15 via-transparent to-seyfarth-yellow/15" />
+            <img
+              src={onepageImages.heroTruck.src}
+              alt={onepageImages.heroTruck.alt}
+              className="relative aspect-[4/3] w-full rounded-[26px] object-cover"
+              loading="eager"
+              decoding="async"
+            />
+            <figcaption className="absolute bottom-7 left-7 right-7 rounded-2xl bg-seyfarth-navy/88 px-5 py-4 text-sm font-semibold text-white shadow-lg backdrop-blur">
+              Eigene Seyfarth-Flotte im Einsatz – die Anfrage wird persönlich geprüft.
+            </figcaption>
+          </figure>
         </div>
 
         <div className="relative mx-auto mt-16 max-w-7xl px-6">

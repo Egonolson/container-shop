@@ -43,6 +43,21 @@ const steps: { key: Step; label: string }[] = [
   { key: "summary", label: "Prüfen" },
 ]
 
+const onepageConfiguratorImages = {
+  entsorgung: {
+    src: "https://onecdn.io/media/439da145-35ef-4382-8044-2fd66d5d373d/md2x",
+    alt: "Seyfarth-Absetzcontainer-LKW für Entsorgungsanfragen",
+  },
+  baustoffe: {
+    src: "https://onecdn.io/media/0a1fa9b6-6ca3-4ac5-a57d-7494232709f2/md2x",
+    alt: "Seyfarth-Multicar für kleinere Baustoff- und Materiallieferungen",
+  },
+  transport: {
+    src: "https://onecdn.io/media/cf59c78d-e307-4357-b83a-c66be5d710f0/md2x",
+    alt: "Seyfarth-Abrollcontainer-LKW für größere Transportaufgaben",
+  },
+}
+
 const emptyContact = {
   customerType: "private",
   name: "",
@@ -276,9 +291,9 @@ export function SeyfarthConfigurator() {
               {step === "mode" && (
                 <StepBlock title="Was möchten Sie anfragen?" intro="Wählen Sie zuerst aus, worum es geht. Danach erfassen wir Ort, Auswahl, Größe, Stellplatz und Terminwunsch.">
                   <div className="grid gap-4 md:grid-cols-3">
-                    <ChoiceCard active={mode === "entsorgung"} icon={Recycle} title="Entsorgung" text="Container für Bauschutt, Sperrmüll, Holz, Grünschnitt und weitere Abfälle anfragen." onClick={() => setMode("entsorgung")} />
-                    <ChoiceCard active={mode === "baustoffe"} icon={Package} title="Baustoffe" text="Schüttgut oder Recyclingmaterial liefern lassen – Preis abhängig von Menge und Lieferort." onClick={() => setMode("baustoffe")} />
-                    <ChoiceCard active={mode === "transport"} icon={Truck} title="Transport" text="Transportleistung mit Abholort, Zielort und gewünschtem Zeitraum anfragen." onClick={() => setMode("transport")} />
+                    <ChoiceCard active={mode === "entsorgung"} icon={Recycle} image={onepageConfiguratorImages.entsorgung} title="Entsorgung" text="Container für Bauschutt, Sperrmüll, Holz, Grünschnitt und weitere Abfälle anfragen." onClick={() => setMode("entsorgung")} />
+                    <ChoiceCard active={mode === "baustoffe"} icon={Package} image={onepageConfiguratorImages.baustoffe} title="Baustoffe" text="Schüttgut oder Recyclingmaterial liefern lassen – Preis abhängig von Menge und Lieferort." onClick={() => setMode("baustoffe")} />
+                    <ChoiceCard active={mode === "transport"} icon={Truck} image={onepageConfiguratorImages.transport} title="Transport" text="Transportleistung mit Abholort, Zielort und gewünschtem Zeitraum anfragen." onClick={() => setMode("transport")} />
                   </div>
                 </StepBlock>
               )}
@@ -468,23 +483,32 @@ function StepBlock({ title, intro, children }: { title: string; intro: string; c
   return <div><h3 className="font-headline text-2xl font-extrabold text-seyfarth-navy md:text-3xl">{title}</h3><p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600">{intro}</p><div className="mt-6 space-y-5">{children}</div></div>
 }
 
-function ChoiceCard({ active, icon: Icon, title, text, onClick }: { active: boolean; icon: React.ElementType; title: string; text: string; onClick: () => void }) {
+function ChoiceCard({ active, icon: Icon, image, title, text, onClick }: { active: boolean; icon: React.ElementType; image?: { src: string; alt: string }; title: string; text: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-label={`${title}: ${text}`}
       aria-pressed={active}
       className={cx(
-        "min-h-44 rounded-3xl border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+        "min-h-44 overflow-hidden rounded-3xl border text-left transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
         active ? "border-seyfarth-blue bg-seyfarth-blue text-white shadow-lg" : "border-zinc-200 bg-white text-seyfarth-navy",
       )}
     >
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <Icon className={cx("h-8 w-8", active ? "text-seyfarth-yellow" : "text-seyfarth-blue")} />
-        {active && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-xs font-bold text-white"><Check className="h-3 w-3" />Ausgewählt</span>}
+      {image && (
+        <div className={cx("relative h-28 overflow-hidden", active ? "bg-seyfarth-navy" : "bg-seyfarth-blue")}>
+          <img src={image.src} alt={image.alt} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+          <div className="absolute inset-0 bg-gradient-to-t from-seyfarth-navy/35 via-transparent to-transparent" aria-hidden="true" />
+        </div>
+      )}
+      <div className="p-5">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <Icon className={cx("h-8 w-8", active ? "text-seyfarth-yellow" : "text-seyfarth-blue")} />
+          {active && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-xs font-bold text-white"><Check className="h-3 w-3" />Ausgewählt</span>}
+        </div>
+        <p className="font-bold">{title}</p>
+        <p className={cx("mt-2 text-sm leading-relaxed", active ? "text-blue-50" : "text-zinc-500")}>{text}</p>
       </div>
-      <p className="font-bold">{title}</p>
-      <p className={cx("mt-2 text-sm leading-relaxed", active ? "text-blue-50" : "text-zinc-500")}>{text}</p>
     </button>
   )
 }
