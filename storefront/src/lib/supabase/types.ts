@@ -205,6 +205,7 @@ export type Database = {
     Functions: {
       email_has_account: { Args: { check_email: string }; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
+      owns_construction_site: { Args: { p_site_id: string }; Returns: boolean }
     }
     Enums: {
       account_role: "customer" | "staff" | "admin"
