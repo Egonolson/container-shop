@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/types"
 import { validateRegistration } from "@/lib/auth/validate-registration"
+import { REGISTRATION_ENABLED } from "@/lib/config"
 
 type ConstructionSite = Database["public"]["Tables"]["construction_sites"]["Row"]
 
@@ -264,7 +265,7 @@ export function SeyfarthConfigurator() {
   }
 
   const checkEmailAccount = async () => {
-    if (loggedInEmail) return
+    if (loggedInEmail || !REGISTRATION_ENABLED) return
     if (!EMAIL_RE.test(contact.email)) {
       setEmailAccountState("idle")
       return
@@ -341,6 +342,9 @@ export function SeyfarthConfigurator() {
         const baseOk = !!(contact.firstName && contact.lastName && contact.email && contact.phone && contact.street && contact.postalCode && contact.city)
         if (!baseOk) return false
         if (loggedInEmail) return true
+        // Registration off (e.g. PROD until SMTP): everyone submits as guest;
+        // business only still needs a company name, never a password.
+        if (!REGISTRATION_ENABLED) return contact.customerType !== "business" || !!contact.company
         if (emailAccountState === "checking") return false
         if (emailAccountState === "exists") return password.length > 0
         if (contact.customerType === "business") return !!contact.company && password.length >= 8
@@ -361,6 +365,10 @@ export function SeyfarthConfigurator() {
       case "placement": return "Bitte wählen Sie den Stellplatz und bestätigen Sie erforderliche Hinweise."
       case "dates": return "Bitte nennen Sie ein Wunschdatum oder wählen Sie telefonische Abstimmung."
       case "contact": {
+        if (!REGISTRATION_ENABLED) {
+          if (contact.customerType === "business" && !contact.company) return "Bitte geben Sie den Firmennamen an."
+          return "Bitte füllen Sie die Pflichtfelder für die Kontaktaufnahme aus."
+        }
         if (emailAccountState === "checking") return "Wir prüfen kurz Ihre E-Mail-Adresse …"
         if (emailAccountState === "exists" && !loggedInEmail) return "Diese E-Mail ist bereits registriert – bitte Passwort eingeben, um sich anzumelden."
         if (!loggedInEmail && contact.customerType === "business") return "Für Gewerbekunden sind Firma und ein Kundenkonto (Passwort) erforderlich."
@@ -377,7 +385,7 @@ export function SeyfarthConfigurator() {
     setSubmitting(true)
     setError(null)
 
-    if (!loggedInEmail) {
+    if (!loggedInEmail && REGISTRATION_ENABLED) {
       const supabase = createClient()
       try {
         if (emailAccountState === "exists") {
@@ -695,11 +703,11 @@ export function SeyfarthConfigurator() {
                           {photoPath && !photoUploading && <p className="text-xs text-emerald-600">Foto hochgeladen.</p>}
                           {photoError && <p className="text-xs text-destructive">{photoError}</p>}
                         </div>
-                      ) : (
+                      ) : REGISTRATION_ENABLED ? (
                         <p className="text-xs text-zinc-500">
                           Mit einem Kundenkonto können Sie zusätzlich ein Foto des Stellplatzes hochladen.
                         </p>
-                      )}
+                      ) : null}
                     </div>
                   )}
                 </StepBlock>
@@ -730,7 +738,11 @@ export function SeyfarthConfigurator() {
                   </div>
                   <Field label="Hinweise zur Baustelle, Zufahrt oder Abfallart"><textarea value={contact.message} onChange={(e) => updateContact("message", e.target.value)} className="sey-input min-h-24" /></Field>
 
-                  {loggedInEmail ? (
+                  {!REGISTRATION_ENABLED ? (
+                    loggedInEmail ? (
+                      <Notice tone="success">Angemeldet als {loggedInEmail}. Diese Anfrage erscheint in Ihrem Kundenkonto.</Notice>
+                    ) : null
+                  ) : loggedInEmail ? (
                     <Notice tone="success">Angemeldet als {loggedInEmail}. Diese Anfrage erscheint in Ihrem Kundenkonto.</Notice>
                   ) : emailAccountState === "exists" ? (
                     <div className="space-y-3">

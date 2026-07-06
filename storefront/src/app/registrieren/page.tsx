@@ -8,12 +8,38 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import type { CustomerKind } from "@/lib/auth/validate-registration"
+import { REGISTRATION_ENABLED } from "@/lib/config"
 import { registerAction, type RegisterFormState } from "./actions"
 
 const INITIAL_STATE: RegisterFormState = { errors: [], values: {} }
 
 function errorFor(state: RegisterFormState, field: string) {
   return state.errors.find((e) => e.field === field)?.message
+}
+
+function RegistrationClosed() {
+  return (
+    <PublicShell>
+      <section className="bg-zinc-50 py-16 md:py-24">
+        <div className="mx-auto max-w-md px-4">
+          <div className="rounded-[32px] border border-zinc-100 bg-white p-8 text-center shadow-sm">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-seyfarth-blue/10 text-seyfarth-blue">
+              <UserPlus className="h-8 w-8" />
+            </div>
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-seyfarth-blue">Seyfarth Kundenportal</p>
+            <h1 className="mt-3 font-headline text-3xl font-extrabold text-seyfarth-navy">Kundenkonten in Kürze</h1>
+            <p className="mt-3 text-sm text-zinc-600">
+              Die Registrierung wird gerade vorbereitet und in Kürze freigeschaltet. Sie können Ihre Anfrage jederzeit{" "}
+              <Link href="/#katalog" className="font-medium text-seyfarth-blue underline underline-offset-2">
+                als Gast senden
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
+      </section>
+    </PublicShell>
+  )
 }
 
 export default function RegistrierenPage() {
@@ -23,6 +49,8 @@ export default function RegistrierenPage() {
   )
 
   const formError = errorFor(state, "form")
+
+  if (!REGISTRATION_ENABLED) return <RegistrationClosed />
 
   return (
     <PublicShell>

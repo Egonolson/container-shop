@@ -31,6 +31,7 @@ services:
         NEXT_PUBLIC_SITE_URL: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_REGISTRATION_ENABLED: ${NEXT_PUBLIC_REGISTRATION_ENABLED:-true}
     image: seyfarth-storefront:${IMAGE_TAG:-latest}
     container_name: seyfarth-storefront
     restart: unless-stopped
@@ -116,7 +117,10 @@ services:
       API_EXTERNAL_URL: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}
       GOTRUE_SITE_URL: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}
       GOTRUE_URI_ALLOW_LIST: ${SITE_URL:-https://seyfarth-dev.visionmakegpt.work}/**
-      GOTRUE_DISABLE_SIGNUP: "false"
+      # Defense-in-depth alongside the client REGISTRATION_ENABLED flag:
+      # PROD sets this "true" until real SMTP exists, so signups are refused
+      # server-side too, not just hidden in the UI. DEV leaves it "false".
+      GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-false}
       GOTRUE_DB_DRIVER: postgres
       DATABASE_URL: postgres://supabase_auth_admin:${SUPABASE_DB_PASSWORD:-}@seyfarth-db:5432/postgres
       GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
