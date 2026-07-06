@@ -5,7 +5,8 @@
 # ============================================================
 # Production-ready Zielbild: Medusa ist nicht mehr Laufzeit-Abhängigkeit.
 # Der öffentliche Shop läuft als Next.js Anfrage-/Konfiguratorstrecke.
-# Anfragen werden serverseitig als JSONL im persistenten Docker-Volume abgelegt.
+# Anfragen werden in Supabase (Tabelle shop_requests) abgelegt, siehe
+# docs/plans/2026-07-07-anfrage-kontoerstellung-design.md.
 # ============================================================
 
 networks:
@@ -14,8 +15,6 @@ networks:
     driver: bridge
 
 volumes:
-  seyfarth-request-data:
-    name: seyfarth-request-data
   seyfarth-db-data:
     name: seyfarth-db-data
   seyfarth-storage-data:
@@ -38,9 +37,6 @@ services:
     networks: [seyfarth-net]
     environment:
       NODE_ENV: production
-      SEYFARTH_REQUEST_LOG_PATH: /app/data/shop-requests.jsonl
-    volumes:
-      - seyfarth-request-data:/app/data
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 30s

@@ -94,11 +94,45 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_requests: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          mode: string
+          payload: Json
+          reference: string
+          request_form_version: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          mode: string
+          payload: Json
+          reference: string
+          request_form_version: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          mode?: string
+          payload?: Json
+          reference?: string
+          request_form_version?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      email_has_account: { Args: { check_email: string }; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
     }
     Enums: {
@@ -239,3 +273,4 @@ export const Constants = {
     },
   },
 } as const
+

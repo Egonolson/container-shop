@@ -1,6 +1,6 @@
-import { appendFile, mkdir } from "node:fs/promises"
-import { dirname } from "node:path"
 import { NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
+import type { Json } from "@/lib/supabase/types"
 import { REQUEST_FORM_VERSION, containerSizes, materialItems, wasteItems, type ShopMode } from "@/lib/seyfarth-shop-data"
 
 export const runtime = "nodejs"
@@ -72,12 +72,6 @@ function rejectUnexpectedTopLevelKeys(payload: Record<string, unknown>) {
   return Object.keys(payload).filter((key) => !allowed.has(key))
 }
 
-async function persistRequest(entry: Record<string, unknown>) {
-  const filePath = process.env.SEYFARTH_REQUEST_LOG_PATH || "/tmp/seyfarth-shop-requests.jsonl"
-  await mkdir(dirname(filePath), { recursive: true })
-  await appendFile(filePath, `${JSON.stringify(entry)}\n`, { encoding: "utf8", mode: 0o600 })
-}
-
 export async function POST(request: NextRequest) {
   if (rateLimit(request)) {
     return json("Zu viele Anfragen. Bitte versuchen Sie es in einigen Minuten erneut oder rufen Sie uns direkt an.", 429)
@@ -110,7 +104,9 @@ export async function POST(request: NextRequest) {
   }
 
   const contact = getObject(payload.contact)
-  const name = cleanString(contact.name)
+  const firstName = cleanString(contact.firstName)
+  const lastName = cleanString(contact.lastName)
+  const customerType = cleanString(contact.customerType, 16) === "business" ? "business" : "private"
   const company = cleanString(contact.company)
   const email = cleanString(contact.email).toLowerCase()
   const phone = cleanString(contact.phone)
@@ -123,8 +119,11 @@ export async function POST(request: NextRequest) {
   if (!ALLOWED_MODES.includes(mode as ShopMode)) {
     return json("Bitte wählen Sie einen Bereich aus.", 422)
   }
-  if (!name || !EMAIL_RE.test(email) || !PHONE_RE.test(phone) || !street || !POSTAL_CODE_RE.test(postalCode) || !city) {
+  if (!firstName || !lastName || !EMAIL_RE.test(email) || !PHONE_RE.test(phone) || !street || !POSTAL_CODE_RE.test(postalCode) || !city) {
     return json("Bitte füllen Sie alle Pflichtfelder korrekt aus.", 422)
+  }
+  if (customerType === "business" && !company) {
+    return json("Bitte geben Sie einen Firmennamen an.", 422)
   }
 
   const confirmations = getObject(payload.confirmations)
@@ -204,7 +203,6 @@ export async function POST(request: NextRequest) {
   const entry = {
     requestId,
     receivedAt,
-    status: "received",
     source: "seyfarth-shop",
     requestFormVersion: REQUEST_FORM_VERSION,
     mode,
@@ -222,16 +220,29 @@ export async function POST(request: NextRequest) {
       safetyAccepted: getBoolean(placement.safetyAccepted),
     },
     dates: sanitizedDates,
-    contact: { name, company, email, phone, street, postalCode, city, message },
+    contact: { customerType, firstName, lastName, company, email, phone, street, postalCode, city, message },
     confirmations: {
       privacyAccepted: true,
       submittedNoticeVersion: cleanString(confirmations.submittedNoticeVersion, 80),
     },
   }
 
-  try {
-    await persistRequest(entry)
-  } catch {
+  // Uses the caller's own session (cookie-bound) so RLS enforces that a
+  // request can only ever be attributed to the signed-in user themselves —
+  // never to an arbitrary customer_id. Guests (no session) get null.
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const { error: insertError } = await supabase.from("shop_requests").insert({
+    reference: requestId,
+    customer_id: user?.id ?? null,
+    mode,
+    request_form_version: REQUEST_FORM_VERSION,
+    payload: entry as unknown as Json,
+  })
+  if (insertError) {
     return json("Die Anfrage konnte technisch nicht gespeichert werden. Bitte rufen Sie uns an oder versuchen Sie es später erneut.", 503)
   }
 

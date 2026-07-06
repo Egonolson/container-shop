@@ -17,6 +17,8 @@ import {
   Truck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
+import { validateRegistration } from "@/lib/auth/validate-registration"
 import {
   REQUEST_FORM_VERSION,
   ShopMode,
@@ -30,7 +32,10 @@ import {
   wasteItems,
 } from "@/lib/seyfarth-shop-data"
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 type Step = "mode" | "location" | "selection" | "container" | "placement" | "dates" | "contact" | "summary"
+type EmailAccountState = "idle" | "checking" | "exists" | "new"
 
 const steps: { key: Step; label: string }[] = [
   { key: "mode", label: "Bereich" },
@@ -45,7 +50,8 @@ const steps: { key: Step; label: string }[] = [
 
 const emptyContact = {
   customerType: "private",
-  name: "",
+  firstName: "",
+  lastName: "",
   company: "",
   email: "",
   phone: "",
@@ -85,7 +91,41 @@ export function SeyfarthConfigurator() {
   const [submitting, setSubmitting] = useState(false)
   const [submittedId, setSubmittedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [password, setPassword] = useState("")
+  const [wantsAccount, setWantsAccount] = useState(false)
+  const [emailAccountState, setEmailAccountState] = useState<EmailAccountState>("idle")
+  const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null)
   const successRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    let active = true
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (active && data.user?.email) setLoggedInEmail(data.user.email)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const checkEmailAccount = async () => {
+    if (loggedInEmail) return
+    if (!EMAIL_RE.test(contact.email)) {
+      setEmailAccountState("idle")
+      return
+    }
+    setEmailAccountState("checking")
+    try {
+      const { data, error: rpcError } = await createClient().rpc("email_has_account", { check_email: contact.email })
+      if (rpcError) throw rpcError
+      setEmailAccountState(data ? "exists" : "new")
+    } catch {
+      // Conservative fallback: treat as a new account. A genuine duplicate
+      // still gets caught by signUp() itself at submit time.
+      setEmailAccountState("new")
+    }
+  }
 
   const zoneMatch = useMemo(() => lookupZone(postalCode, city), [postalCode, city])
   const selectedWaste = wasteItems.find((item) => item.id === selectedWasteId)
@@ -143,7 +183,16 @@ export function SeyfarthConfigurator() {
       case "container": return mode === "baustoffe" ? materialQuantity > 0 : !!containerSize
       case "placement": return !!placement && (placement !== "public" || permitAccepted) && (!selectedWaste?.isHazardous || safetyAccepted)
       case "dates": return !!deliveryDate || dateFlexibility === "telefonisch abstimmen"
-      case "contact": return !!(contact.name && contact.email && contact.phone && contact.street && contact.postalCode && contact.city)
+      case "contact": {
+        const baseOk = !!(contact.firstName && contact.lastName && contact.email && contact.phone && contact.street && contact.postalCode && contact.city)
+        if (!baseOk) return false
+        if (loggedInEmail) return true
+        if (emailAccountState === "checking") return false
+        if (emailAccountState === "exists") return password.length > 0
+        if (contact.customerType === "business") return !!contact.company && password.length >= 8
+        if (wantsAccount) return password.length >= 8
+        return true
+      }
       case "summary": return privacyAccepted
       default: return false
     }
@@ -157,7 +206,12 @@ export function SeyfarthConfigurator() {
       case "container": return mode === "baustoffe" ? "Bitte geben Sie die gewünschte Menge ein." : "Bitte wählen Sie eine Containergröße aus – auch „Ich bin unsicher“ ist möglich."
       case "placement": return "Bitte wählen Sie den Stellplatz und bestätigen Sie erforderliche Hinweise."
       case "dates": return "Bitte nennen Sie ein Wunschdatum oder wählen Sie telefonische Abstimmung."
-      case "contact": return "Bitte füllen Sie die Pflichtfelder für die Kontaktaufnahme aus."
+      case "contact": {
+        if (emailAccountState === "checking") return "Wir prüfen kurz Ihre E-Mail-Adresse …"
+        if (emailAccountState === "exists" && !loggedInEmail) return "Diese E-Mail ist bereits registriert – bitte Passwort eingeben, um sich anzumelden."
+        if (!loggedInEmail && contact.customerType === "business") return "Für Gewerbekunden sind Firma und ein Kundenkonto (Passwort) erforderlich."
+        return "Bitte füllen Sie die Pflichtfelder für die Kontaktaufnahme aus."
+      }
       case "summary": return "Bitte bestätigen Sie die Datenschutzhinweise."
       default: return "Bitte vervollständigen Sie die Angaben."
     }
@@ -168,6 +222,44 @@ export function SeyfarthConfigurator() {
     if (!privacyAccepted) return
     setSubmitting(true)
     setError(null)
+
+    if (!loggedInEmail) {
+      const supabase = createClient()
+      try {
+        if (emailAccountState === "exists") {
+          const { error: authError } = await supabase.auth.signInWithPassword({ email: contact.email, password })
+          if (authError) throw new Error("Anmeldung fehlgeschlagen: falsches Passwort oder unbekannte E-Mail-Adresse.")
+        } else if (contact.customerType === "business" || wantsAccount) {
+          const registrationErrors = validateRegistration({
+            customerKind: contact.customerType === "business" ? "business" : "private",
+            email: contact.email,
+            password,
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            companyName: contact.company,
+          })
+          if (registrationErrors.length > 0) throw new Error(registrationErrors[0].message)
+          const { error: authError } = await supabase.auth.signUp({
+            email: contact.email,
+            password,
+            options: {
+              data: {
+                customer_kind: contact.customerType,
+                first_name: contact.firstName || null,
+                last_name: contact.lastName || null,
+                company_name: contact.company || null,
+              },
+            },
+          })
+          if (authError) throw new Error(authError.message)
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Konto konnte nicht angelegt bzw. Anmeldung nicht durchgeführt werden.")
+        setSubmitting(false)
+        return
+      }
+    }
+
     const payload = {
       requestFormVersion: REQUEST_FORM_VERSION,
       mode,
@@ -186,6 +278,7 @@ export function SeyfarthConfigurator() {
     try {
       const response = await fetch("/api/shop-requests", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
@@ -396,15 +489,37 @@ export function SeyfarthConfigurator() {
                 <StepBlock title="Wohin dürfen wir das Angebot senden?" intro="Wir nutzen Ihre Angaben nur zur Bearbeitung dieser Anfrage.">
                   <div className="grid gap-4 md:grid-cols-2">
                     <Field label="Kundentyp"><select value={contact.customerType} onChange={(e) => updateContact("customerType", e.target.value)} className="sey-input"><option value="private">Privat</option><option value="business">Gewerblich</option></select></Field>
-                    <Field label="Name"><input value={contact.name} onChange={(e) => updateContact("name", e.target.value)} className="sey-input" /></Field>
-                    <Field label="Firma, falls gewerblich"><input value={contact.company} onChange={(e) => updateContact("company", e.target.value)} className="sey-input" /></Field>
-                    <Field label="E-Mail"><input type="email" value={contact.email} onChange={(e) => updateContact("email", e.target.value)} className="sey-input" /></Field>
+                    <Field label="Vorname"><input value={contact.firstName} onChange={(e) => updateContact("firstName", e.target.value)} className="sey-input" /></Field>
+                    <Field label="Nachname"><input value={contact.lastName} onChange={(e) => updateContact("lastName", e.target.value)} className="sey-input" /></Field>
+                    <Field label={contact.customerType === "business" ? "Firma" : "Firma, falls gewerblich"}><input value={contact.company} onChange={(e) => updateContact("company", e.target.value)} className="sey-input" /></Field>
+                    <Field label="E-Mail"><input type="email" value={contact.email} onChange={(e) => updateContact("email", e.target.value)} onBlur={checkEmailAccount} className="sey-input" /></Field>
                     <Field label="Telefon"><input value={contact.phone} onChange={(e) => updateContact("phone", e.target.value)} className="sey-input" /></Field>
                     <Field label="Straße und Hausnummer"><input value={contact.street} onChange={(e) => updateContact("street", e.target.value)} className="sey-input" /></Field>
                     <Field label="PLZ"><input value={contact.postalCode} onChange={(e) => updateContact("postalCode", e.target.value)} className="sey-input" /></Field>
                     <Field label="Ort"><input value={contact.city} onChange={(e) => updateContact("city", e.target.value)} className="sey-input" /></Field>
                   </div>
                   <Field label="Hinweise zur Baustelle, Zufahrt oder Abfallart"><textarea value={contact.message} onChange={(e) => updateContact("message", e.target.value)} className="sey-input min-h-24" /></Field>
+
+                  {loggedInEmail ? (
+                    <Notice tone="success">Angemeldet als {loggedInEmail}. Diese Anfrage erscheint in Ihrem Kundenkonto.</Notice>
+                  ) : emailAccountState === "exists" ? (
+                    <div className="space-y-3">
+                      <Notice tone="warning">Diese E-Mail-Adresse ist bereits registriert. Bitte melden Sie sich an, um die Anfrage Ihrem Konto zuzuordnen.</Notice>
+                      <Field label="Passwort"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="sey-input" /></Field>
+                    </div>
+                  ) : contact.customerType === "business" ? (
+                    <div className="space-y-3">
+                      <Notice tone="warning">Für Gewerbekunden ist ein Kundenkonto erforderlich, damit Anfragen und spätere Aufträge zugeordnet werden können.</Notice>
+                      <Field label="Passwort (mind. 8 Zeichen)"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="sey-input" /></Field>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Checkbox checked={wantsAccount} onChange={setWantsAccount}>Kundenkonto anlegen (optional) — damit sehen Sie diese und künftige Anfragen in Ihrem Konto.</Checkbox>
+                      {wantsAccount && (
+                        <Field label="Passwort (mind. 8 Zeichen)"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="sey-input" /></Field>
+                      )}
+                    </div>
+                  )}
                 </StepBlock>
               )}
 
