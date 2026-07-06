@@ -50,6 +50,15 @@ admin_scalar() {
 
 echo "Waiting for $CONTAINER to accept connections..."
 until docker exec "$CONTAINER" pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done
+# On a FRESH volume, pg_isready reports ready during initdb's temporary
+# startup — before supabase_admin's password is finalized — so a bootstrap
+# that starts here races the init and fails auth. Wait until we can actually
+# authenticate as supabase_admin (bounded) before touching anything.
+echo "Waiting until supabase_admin authentication works..."
+for _ in $(seq 1 60); do
+  if printf 'select 1;\n' | as_admin >/dev/null 2>&1; then break; fi
+  sleep 2
+done
 
 echo "Fixing internal role passwords (idempotent)..."
 # Unquoted heredoc so $PW is substituted locally before piping into psql via
