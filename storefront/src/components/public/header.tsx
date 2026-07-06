@@ -2,7 +2,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Menu, Phone, X } from "lucide-react"
+import { ExternalLink, Menu, Phone, User, X } from "lucide-react"
 import { useState } from "react"
 
 const MAIN_WEBSITE_URL = process.env.NEXT_PUBLIC_MAIN_WEBSITE_URL || "https://containerdienst-seyfarth.onepage.me/"
@@ -25,6 +25,10 @@ export function Header() {
           <Link href="/#katalog" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">Anfrage</Link>
           <Link href="/#entsorgung" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">Entsorgung</Link>
           <a href="tel:03449155200" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">034491 5520-0</a>
+          <Link href="/konto" className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-seyfarth-navy transition-colors hover:text-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue">
+            <User className="h-4 w-4" strokeWidth={1.5} />
+            Mein Konto
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -43,6 +47,7 @@ export function Header() {
           <Link href="/#katalog" className="block border-t border-zinc-100 py-2 text-sm text-seyfarth-navy" onClick={() => setMobileMenuOpen(false)}>Anfrage</Link>
           <Link href="/#entsorgung" className="block border-t border-zinc-100 py-2 text-sm text-seyfarth-navy" onClick={() => setMobileMenuOpen(false)}>Entsorgung</Link>
           <a href="tel:03449155200" className="flex items-center gap-2 border-t border-zinc-100 py-2 text-sm text-seyfarth-navy"><Phone className="h-4 w-4" />034491 5520-0</a>
+          <Link href="/konto" className="flex items-center gap-2 border-t border-zinc-100 py-2 text-sm text-seyfarth-navy" onClick={() => setMobileMenuOpen(false)}><User className="h-4 w-4" />Mein Konto</Link>
         </div>
       )}
     </header>
