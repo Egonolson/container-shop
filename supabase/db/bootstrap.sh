@@ -4,7 +4,8 @@
 #      them without a password, so auth/rest/storage can't connect otherwise)
 #   2. fixes auth.uid()/role()/email() ownership so gotrue can start
 #   3. grants supabase_storage_admin the roles it needs to set RLS context
-#   4. applies our own migrations, skipping if already applied
+#   4. applies pending migrations, tracked per-file in public._app_migrations
+#      (so a redeploy against an existing volume applies only new ones)
 #
 # See the supabase-self-hosted-docker skill for why each step is needed.
 #
@@ -42,6 +43,11 @@ as_admin() {
   docker exec -i "$CONTAINER" sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1'
 }
 
+# Tuples-only query as supabase_admin; SQL on stdin, result on stdout.
+admin_scalar() {
+  docker exec -i "$CONTAINER" sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -U supabase_admin -d postgres -tA'
+}
+
 echo "Waiting for $CONTAINER to accept connections..."
 until docker exec "$CONTAINER" pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done
 
@@ -70,16 +76,32 @@ as_admin <<-'EOSQL'
   GRANT anon          TO supabase_storage_admin;
 EOSQL
 
-echo "Applying app migrations (skips if already applied)..."
-EXISTING=$(docker exec "$CONTAINER" psql -U postgres -tAc "select to_regclass('public.customer_profiles')")
-if [ -z "$EXISTING" ] || [ "$EXISTING" = "" ]; then
-  for f in "$REPO_ROOT"/supabase/migrations/*.sql; do
-    echo "  -> $(basename "$f")"
-    docker exec -i "$CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -d postgres < "$f"
-  done
-else
-  echo "  customer_profiles already exists, skipping migrations."
+echo "Applying pending app migrations (tracked in public._app_migrations)..."
+# Migrations run as supabase_admin (superuser): the storage-policy migration
+# needs ownership of storage.objects, and email_has_account() (SECURITY
+# DEFINER over auth.users) must be owned by a role that can read auth.users.
+printf '%s\n' \
+  "create table if not exists public._app_migrations (name text primary key, applied_at timestamptz not null default now());" \
+  "revoke all on public._app_migrations from anon, authenticated;" | as_admin
+
+# Backfill for pre-existing volumes: the very first migration was applied by
+# the old bootstrap (as postgres) before this tracking table existed. If its
+# table is already present, record it as applied so we don't try to re-run it.
+if [ -n "$(printf '%s\n' "select to_regclass('public.customer_profiles');" | admin_scalar)" ]; then
+  printf '%s\n' "insert into public._app_migrations(name) values ('20260706104434_customer_profiles.sql') on conflict do nothing;" | as_admin
 fi
+
+for f in "$REPO_ROOT"/supabase/migrations/*.sql; do
+  name=$(basename "$f")
+  applied=$(printf '%s\n' "select 1 from public._app_migrations where name = '$name';" | admin_scalar)
+  if [ -n "$applied" ]; then
+    echo "  = $name (already applied)"
+    continue
+  fi
+  echo "  -> $name"
+  as_admin < "$f"
+  printf '%s\n' "insert into public._app_migrations(name) values ('$name');" | as_admin
+done
 
 echo "Bootstrap done. Restarting dependent services..."
 docker restart seyfarth-auth seyfarth-rest seyfarth-storage >/dev/null 2>&1 || true
