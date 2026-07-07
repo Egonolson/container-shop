@@ -30,6 +30,7 @@ export default async function AdminErpPage() {
     MIRRORS.map(async (m) => ({ ...m, count: (await raw.from(m.table).select("*", { count: "exact", head: true })).count ?? 0 })),
   )
   const { data: runs } = await supabase.from("sync_runs").select("entity, source, status, inserted, updated, deleted, errors, started_at").order("started_at", { ascending: false }).limit(10)
+  const { data: syncErrors } = await supabase.from("sync_errors").select("entity, external_id, message, created_at").order("created_at", { ascending: false }).limit(20)
   const { data: pending } = await supabase.from("customer_erp_links").select("id, customer_id, erp_customer_id, score, matched_fields, candidates, status").eq("status", "pending").limit(25)
 
   return (
@@ -99,6 +100,39 @@ export default async function AdminErpPage() {
                     <TableCell>{r.inserted}/{r.updated}/{r.deleted}</TableCell>
                     <TableCell>{r.errors}</TableCell>
                     <TableCell>{new Date(r.started_at).toLocaleString("de-DE")}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base text-seyfarth-navy">Sync-Fehler</CardTitle>
+          <CardDescription>Einzelne Datensatz-Fehler des letzten Syncs (leer = alles sauber gelaufen).</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!syncErrors || syncErrors.length === 0 ? (
+            <p className="text-sm text-zinc-500">Keine Sync-Fehler.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Entität</TableHead>
+                  <TableHead>Datensatz</TableHead>
+                  <TableHead>Fehler</TableHead>
+                  <TableHead>Zeit</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {syncErrors.map((e, i) => (
+                  <TableRow key={i}>
+                    <TableCell>{e.entity}</TableCell>
+                    <TableCell className="font-mono text-xs">{e.external_id ?? "—"}</TableCell>
+                    <TableCell className="max-w-md truncate text-sm text-destructive" title={e.message}>{e.message}</TableCell>
+                    <TableCell>{new Date(e.created_at).toLocaleString("de-DE")}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
