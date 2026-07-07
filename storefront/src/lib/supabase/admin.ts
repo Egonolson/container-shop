@@ -15,3 +15,17 @@ export function createAdminClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 }
+
+// Untyped service-role client for generic, dynamic-table access (the ERP sync
+// engine upserts into a table chosen at runtime). Same privileges as
+// createAdminClient — server-only.
+export function createRawAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY
+  if (!url || !serviceKey) {
+    throw new Error("SUPABASE_SERVICE_KEY / NEXT_PUBLIC_SUPABASE_URL not configured")
+  }
+  return createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+}

@@ -46,6 +46,9 @@ export default async function AdminDashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline">
+            <a href="/admin/erp">ERP-Anbindung</a>
+          </Button>
+          <Button asChild variant="outline">
             <a href="/admin/smtp">SMTP / E-Mail</a>
           </Button>
           <form action={adminLogoutAction}>
