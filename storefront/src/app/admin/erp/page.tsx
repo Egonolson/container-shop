@@ -1,11 +1,10 @@
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { requireStaff } from "@/lib/supabase/auth-guards"
 import { createRawAdminClient } from "@/lib/supabase/admin"
+import { AdminShell } from "@/components/admin/admin-shell"
 import { ErpConnectionForm, ErpRunButtons } from "./erp-controls"
 import { decideMatchAction } from "./actions"
 
@@ -20,7 +19,7 @@ const MIRRORS: { table: string; label: string }[] = [
 ]
 
 export default async function AdminErpPage() {
-  const { supabase } = await requireStaff()
+  const { supabase, user } = await requireStaff()
 
   const { data: conn } = await supabase.from("erp_connection").select("base_url, enabled, api_key_cipher").eq("id", 1).single()
   // Mirror tables are chosen at runtime, so the typed client can't validate the
@@ -34,11 +33,11 @@ export default async function AdminErpPage() {
   const { data: pending } = await supabase.from("customer_erp_links").select("id, customer_id, erp_customer_id, score, matched_fields, candidates, status").eq("status", "pending").limit(25)
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-12">
-      <Link href="/admin" className="inline-flex items-center gap-2 text-sm text-seyfarth-blue">
-        <ArrowLeft className="h-4 w-4" />
-        Zurück zum Backoffice
-      </Link>
+    <AdminShell userEmail={user.email ?? ""}>
+      <div>
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-seyfarth-blue">Backoffice</p>
+        <h1 className="text-2xl font-extrabold text-seyfarth-navy">ERP-Anbindung</h1>
+      </div>
 
       <Card>
         <CardHeader>
@@ -187,6 +186,6 @@ export default async function AdminErpPage() {
           )}
         </CardContent>
       </Card>
-    </main>
+    </AdminShell>
   )
 }

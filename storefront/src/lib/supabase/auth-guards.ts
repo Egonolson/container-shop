@@ -36,3 +36,16 @@ export async function requireStaff() {
 
   return { supabase, user, profile }
 }
+
+// Stricter than requireStaff: only the "admin" role may manage other
+// backoffice accounts (invite, role change, revoke). "staff" is intentionally
+// excluded to keep account management least-privilege.
+export async function requireAdmin() {
+  const { supabase, user, profile } = await requireStaff()
+
+  if (profile.role !== "admin") {
+    redirect("/admin")
+  }
+
+  return { supabase, user, profile }
+}

@@ -1,123 +1,94 @@
+import Link from "next/link"
+import { ArrowRight, Inbox, PlugZap, Settings, Users, UsersRound } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { requireStaff } from "@/lib/supabase/auth-guards"
-import { adminLogoutAction } from "./actions"
+import { AdminShell } from "@/components/admin/admin-shell"
 
 const MODE_LABELS: Record<string, string> = { entsorgung: "Entsorgung", baustoffe: "Baustoffe", transport: "Transport" }
+
+const QUICK_LINKS = [
+  { href: "/admin/kunden", label: "Kunden", description: "Registrierte Privat- und Gewerbekunden verwalten.", icon: Users },
+  { href: "/admin/anfragen", label: "Anfragen", description: "Alle eingehenden Anfragen aus dem Konfigurator.", icon: Inbox },
+  { href: "/admin/benutzer", label: "Benutzerverwaltung", description: "Mitarbeiter-Konten einladen und verwalten.", icon: UsersRound },
+  { href: "/admin/erp", label: "ERP-Anbindung", description: "CoTraS-Synchronisation und Kunden-Abgleich.", icon: PlugZap },
+  { href: "/admin/smtp", label: "SMTP / E-Mail", description: "Versandkonfiguration für Benachrichtigungen.", icon: Settings },
+] as const
 
 export default async function AdminDashboardPage() {
   const { supabase, user } = await requireStaff()
 
-  const { data: customers } = await supabase
-    .from("customer_profiles")
-    .select("*")
-    .order("created_at", { ascending: false })
+  const [{ count: customerCount }, { count: requestCount }, { count: openCount }, { count: staffCount }, { data: recentRequests }] =
+    await Promise.all([
+      supabase.from("customer_profiles").select("*", { count: "exact", head: true }).eq("role", "customer"),
+      supabase.from("shop_requests").select("*", { count: "exact", head: true }),
+      supabase.from("shop_requests").select("*", { count: "exact", head: true }).eq("status", "neu"),
+      supabase.from("customer_profiles").select("*", { count: "exact", head: true }).in("role", ["staff", "admin"]),
+      supabase.from("shop_requests").select("id, reference, mode, status, created_at").order("created_at", { ascending: false }).limit(5),
+    ])
 
-  const { data: requests } = await supabase
-    .from("shop_requests")
-    .select("id, reference, mode, status, created_at, customer_id")
-    .order("created_at", { ascending: false })
-
-  // shop_requests.customer_id references auth.users, not customer_profiles
-  // directly, so PostgREST can't embed the join automatically — resolved
-  // with a second lookup instead.
-  const customerIds = Array.from(new Set((requests ?? []).map((r) => r.customer_id).filter((id): id is string => !!id)))
-  const { data: requestCustomers } =
-    customerIds.length > 0
-      ? await supabase.from("customer_profiles").select("id, customer_kind, first_name, last_name, company_name").in("id", customerIds)
-      : { data: [] as { id: string; customer_kind: string; first_name: string | null; last_name: string | null; company_name: string | null }[] }
-  const customerById = new Map((requestCustomers ?? []).map((c) => [c.id, c]))
-
-  const customerLabel = (customerId: string | null) => {
-    if (!customerId) return "Gast"
-    const c = customerById.get(customerId)
-    if (!c) return "Gast"
-    return (c.customer_kind === "business" ? c.company_name : [c.first_name, c.last_name].filter(Boolean).join(" ")) || "—"
-  }
+  const stats = [
+    { label: "Registrierte Kunden", value: customerCount ?? 0, icon: Users },
+    { label: "Anfragen gesamt", value: requestCount ?? 0, icon: Inbox },
+    { label: "Offene Anfragen", value: openCount ?? 0, icon: Inbox },
+    { label: "Mitarbeiter-Konten", value: staffCount ?? 0, icon: UsersRound },
+  ]
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-12">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-seyfarth-navy">Backoffice</h1>
-          <p className="text-sm text-zinc-500">Angemeldet als {user.email}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline">
-            <a href="/admin/erp">ERP-Anbindung</a>
-          </Button>
-          <Button asChild variant="outline">
-            <a href="/admin/smtp">SMTP / E-Mail</a>
-          </Button>
-          <form action={adminLogoutAction}>
-            <Button type="submit" variant="outline">
-              Abmelden
-            </Button>
-          </form>
-        </div>
+    <AdminShell userEmail={user.email ?? ""}>
+      <div>
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-seyfarth-blue">Backoffice</p>
+        <h1 className="text-2xl font-extrabold text-seyfarth-navy">Übersicht</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base text-seyfarth-navy">Registrierte Kunden</CardTitle>
-          <CardDescription>
-            Grundgerüst des Admin-Backends (R1). ERP-Bestandskunden-Matching (F2) und Katalog-Freigabe (F3)
-            folgen als eigene Ausbaustufen, sobald die CoTraS-Schnittstelle steht.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!customers || customers.length === 0 ? (
-            <p className="text-sm text-zinc-500">Noch keine registrierten Kunden.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Typ</TableHead>
-                  <TableHead>USt-IdNr.</TableHead>
-                  <TableHead>PLZ / Ort</TableHead>
-                  <TableHead>Rolle</TableHead>
-                  <TableHead>Registriert</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell>
-                      {customer.customer_kind === "business"
-                        ? customer.company_name || "—"
-                        : [customer.first_name, customer.last_name].filter(Boolean).join(" ") || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {customer.customer_kind === "private" ? "Privat" : "Gewerblich"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{customer.vat_id || "—"}</TableCell>
-                    <TableCell>
-                      {customer.postal_code ? `${customer.postal_code} ${customer.city ?? ""}` : "—"}
-                    </TableCell>
-                    <TableCell>{customer.role}</TableCell>
-                    <TableCell>{new Date(customer.created_at).toLocaleDateString("de-DE")}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {stats.map((s) => (
+          <Card key={s.label} className="rounded-2xl border-zinc-100 shadow-sm">
+            <CardContent className="flex items-center gap-3 pt-6">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-seyfarth-blue/10 text-seyfarth-blue">
+                <s.icon className="h-5 w-5" strokeWidth={1.75} />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-seyfarth-navy">{s.value}</p>
+                <p className="text-xs text-zinc-500">{s.label}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base text-seyfarth-navy">Anfragen</CardTitle>
-          <CardDescription>
-            Alle Anfragen aus dem öffentlichen Konfigurator, Gäste und Kunden. Statuspflege folgt als eigene Ausbaustufe.
-          </CardDescription>
+      <div className="grid gap-3 md:grid-cols-2">
+        {QUICK_LINKS.map((q) => (
+          <Link key={q.href} href={q.href}>
+            <Card className="rounded-2xl border-zinc-100 shadow-sm transition-colors hover:border-seyfarth-blue/30">
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-seyfarth-blue/10 text-seyfarth-blue">
+                  <q.icon className="h-5 w-5" strokeWidth={1.75} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-seyfarth-navy">{q.label}</p>
+                  <p className="text-xs text-zinc-500">{q.description}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-zinc-300" />
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+      <Card className="rounded-2xl border-zinc-100 shadow-sm">
+        <CardHeader className="flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base text-seyfarth-navy">Letzte Anfragen</CardTitle>
+            <CardDescription>Die fünf zuletzt eingegangenen Anfragen.</CardDescription>
+          </div>
+          <Link href="/admin/anfragen" className="text-sm font-medium text-seyfarth-blue">
+            Alle anzeigen
+          </Link>
         </CardHeader>
         <CardContent>
-          {!requests || requests.length === 0 ? (
+          {!recentRequests || recentRequests.length === 0 ? (
             <p className="text-sm text-zinc-500">Noch keine Anfragen vorhanden.</p>
           ) : (
             <Table>
@@ -125,17 +96,15 @@ export default async function AdminDashboardPage() {
                 <TableRow>
                   <TableHead>Referenz</TableHead>
                   <TableHead>Bereich</TableHead>
-                  <TableHead>Kunde</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Datum</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {requests.map((r) => (
+                {recentRequests.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-mono text-xs">{r.reference}</TableCell>
                     <TableCell>{MODE_LABELS[r.mode] ?? r.mode}</TableCell>
-                    <TableCell>{customerLabel(r.customer_id)}</TableCell>
                     <TableCell><Badge variant="secondary">{r.status}</Badge></TableCell>
                     <TableCell>{new Date(r.created_at).toLocaleDateString("de-DE")}</TableCell>
                   </TableRow>
@@ -145,6 +114,6 @@ export default async function AdminDashboardPage() {
           )}
         </CardContent>
       </Card>
-    </main>
+    </AdminShell>
   )
 }

@@ -1,11 +1,10 @@
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireStaff } from "@/lib/supabase/auth-guards"
+import { AdminShell } from "@/components/admin/admin-shell"
 import { SmtpForm } from "./smtp-form"
 
 export default async function AdminSmtpPage() {
-  const { supabase } = await requireStaff()
+  const { supabase, user } = await requireStaff()
 
   const { data } = await supabase
     .from("app_smtp_settings")
@@ -24,11 +23,11 @@ export default async function AdminSmtpPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 px-4 py-12">
-      <Link href="/admin" className="inline-flex items-center gap-2 text-sm text-seyfarth-blue">
-        <ArrowLeft className="h-4 w-4" />
-        Zurück zum Backoffice
-      </Link>
+    <AdminShell userEmail={user.email ?? ""}>
+      <div>
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-seyfarth-blue">Backoffice</p>
+        <h1 className="text-2xl font-extrabold text-seyfarth-navy">SMTP / E-Mail</h1>
+      </div>
 
       <Card>
         <CardHeader>
@@ -42,6 +41,6 @@ export default async function AdminSmtpPage() {
           <SmtpForm settings={settings} defaultTestTo={settings.from_email ?? ""} />
         </CardContent>
       </Card>
-    </main>
+    </AdminShell>
   )
 }
