@@ -67,6 +67,8 @@ export const wasteItems: WasteItem[] = [
   { id: "holz-a4", name: "Altholz A IV", category: "Holz", avv: "170204*", unit: "t", netPrice: 185, requiresWeighing: true, isHazardous: true, notice: "Behandeltes Holz kann gefährliche Bestandteile enthalten. Annahme nur nach Prüfung.", allowedContainerSizes: containerSizes, paymentMode: "inquiry_only" },
   { id: "gruenschnitt", name: "Grünschnitt", category: "Grünabfall", avv: "200201", unit: "t", netPrice: 62, requiresWeighing: true, allowedContainerSizes: containerSizes, paymentMode: "pay_on_site_after_weighing" },
   { id: "erdaushub", name: "Erdaushub unbelastet", category: "Boden / Erde", avv: "170504", unit: "t", netPrice: 19.5, requiresWeighing: true, allowedContainerSizes: ["3 m³", "5 m³", "7 m³", "Ich bin unsicher"], paymentMode: "pay_on_site_after_weighing" },
+  // Vorläufiger Richtwert – Preis noch nicht final mit Christoph Seyfarth abgestimmt, daher inquiry_only statt fixem Preis vor Ort.
+  { id: "altpapier", name: "Altpapier / Pappe", category: "Papier / Pappe", avv: "200101", unit: "t", netPrice: 15, requiresWeighing: true, notice: "Vorläufiger Richtwert – der genaue Preis wird von Seyfarth vor Bestätigung abgestimmt.", allowedContainerSizes: containerSizes, paymentMode: "inquiry_only" },
   { id: "gipskarton", name: "Gipskarton / Rigips", category: "Ausbau", avv: "170802", unit: "t", netPrice: 125, requiresWeighing: true, allowedContainerSizes: containerSizes, paymentMode: "pay_on_site_after_weighing" },
   { id: "gasbeton", name: "Gasbeton / Porenbeton", category: "Bauschutt", avv: "170101", unit: "t", netPrice: 95, requiresWeighing: true, allowedContainerSizes: containerSizes, paymentMode: "pay_on_site_after_weighing" },
   { id: "dachpappe-teerhaltig", name: "Dachpappe teerhaltig", category: "Gefährliche Abfälle", avv: "170303*", unit: "t", netPrice: 420, requiresWeighing: true, isHazardous: true, packaging: "staubdicht verpackt", notice: "Teerhaltige Dachpappe ist ein gefährlicher Abfall und wird nur nach vorheriger Prüfung angenommen.", allowedContainerSizes: ["3 m³", "5 m³", "7 m³", "Ich bin unsicher"], paymentMode: "inquiry_only" },
@@ -112,4 +114,21 @@ export function getTransportPrice(zone: 1 | 2 | 3 | undefined, mode: ShopMode, c
   if (containerSize?.includes("15") || containerSize?.includes("20") || containerSize?.includes("30") || containerSize?.includes("40")) return prices.abrollLarge
   if (containerSize?.includes("10") || containerSize?.includes("12")) return prices.abrollMedium
   return prices.absetzer
+}
+
+// Sonntage gelten als arbeitsfrei; gesetzliche Feiertage werden hier (noch)
+// nicht berücksichtigt, da keine Feiertagskalender-Datenquelle eingebunden ist.
+export function isNonWorkingDay(date: Date) {
+  return date.getDay() === 0
+}
+
+// "Zwischen Bestelltag und Liefertermin muss ein Werktag liegen" – daher
+// mindestens zwei Kalendertage Vorlauf, weiter verschoben, falls der
+// Zwischentag sonst auf einen Sonntag fiele.
+export function earliestDeliveryDate(from: Date = new Date()) {
+  const d = new Date(from)
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + 2)
+  while (isNonWorkingDay(d)) d.setDate(d.getDate() + 1)
+  return d
 }

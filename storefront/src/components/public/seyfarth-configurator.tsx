@@ -7,15 +7,27 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Building2,
   Check,
   ClipboardCheck,
+  Container as ContainerIcon,
+  Info,
+  Layers,
+  Leaf,
   Loader2,
   Mail,
   MapPin,
+  Mountain,
+  Newspaper,
   Package,
   Phone,
+  Radiation,
   Recycle,
+  ShoppingCart,
+  Sprout,
+  TreePine,
   Truck,
+  Wrench,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
@@ -35,9 +47,11 @@ import {
   ShopMode,
   PlacementType,
   containerSizes,
+  earliestDeliveryDate,
   formatEuro,
   getTransportPrice,
   getCityForPostalCode,
+  isNonWorkingDay,
   lookupZone,
   materialItems,
   wasteItems,
@@ -58,6 +72,32 @@ const steps: { key: Step; label: string }[] = [
   { key: "contact", label: "Kontakt" },
   { key: "summary", label: "Prüfen" },
 ]
+
+const WASTE_CATEGORY_ICONS: Record<string, React.ElementType> = {
+  "Bauschutt": Building2,
+  "Mischabfälle": Layers,
+  "Holz": TreePine,
+  "Grünabfall": Leaf,
+  "Boden / Erde": Mountain,
+  "Ausbau": Wrench,
+  "Gefährliche Abfälle": Radiation,
+  "Papier / Pappe": Newspaper,
+}
+
+const MATERIAL_CATEGORY_ICONS: Record<string, React.ElementType> = {
+  "Erden": Sprout,
+  "Recyclingmaterial": Layers,
+  "Kiese": Mountain,
+  "Splitt und Steine": Mountain,
+  "Sande": Mountain,
+}
+
+function containerKind(size: string): { label: string; Icon: React.ElementType } | null {
+  if (size === "Ich bin unsicher") return null
+  if (size.includes("15") || size.includes("20") || size.includes("30") || size.includes("40")) return { label: "Abroller, groß", Icon: Truck }
+  if (size.includes("10") || size.includes("12")) return { label: "Abroller", Icon: Truck }
+  return { label: "Absetzer", Icon: ContainerIcon }
+}
 
 const emptyContact = {
   customerType: "private",
@@ -83,6 +123,7 @@ function stepIndex(step: Step) {
 export function SeyfarthConfigurator() {
   const [step, setStep] = useState<Step>("mode")
   const [mode, setMode] = useState<ShopMode | null>(null)
+  const [wasteGroupOpen, setWasteGroupOpen] = useState(false)
   const [postalCode, setPostalCode] = useState("")
   const [city, setCity] = useState("")
   const [autoFilledCity, setAutoFilledCity] = useState<string | null>(null)
@@ -282,6 +323,8 @@ export function SeyfarthConfigurator() {
     }
   }
 
+  const minDeliveryDate = useMemo(() => earliestDeliveryDate(), [])
+  const minDeliveryDateIso = useMemo(() => minDeliveryDate.toISOString().slice(0, 10), [minDeliveryDate])
   const zoneMatch = useMemo(() => lookupZone(postalCode, city), [postalCode, city])
   const selectedWaste = wasteItems.find((item) => item.id === selectedWasteId)
   const selectedMaterial = materialItems.find((item) => item.id === selectedMaterialId)
@@ -531,11 +574,31 @@ export function SeyfarthConfigurator() {
             <div className="rounded-[28px] bg-white p-5 shadow-sm md:p-8">
               {step === "mode" && (
                 <StepBlock title="Was möchten Sie anfragen?" intro="Wählen Sie zuerst aus, worum es geht. Danach erfassen wir Ort, Auswahl, Größe, Stellplatz und Terminwunsch.">
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <ChoiceCard active={mode === "entsorgung"} icon={Recycle} title="Entsorgung" text="Container für Bauschutt, Sperrmüll, Holz, Grünschnitt und weitere Abfälle anfragen." onClick={() => setMode("entsorgung")} />
-                    <ChoiceCard active={mode === "baustoffe"} icon={Package} title="Baustoffe" text="Schüttgut oder Recyclingmaterial liefern lassen – Preis abhängig von Menge und Lieferort." onClick={() => setMode("baustoffe")} />
-                    <ChoiceCard active={mode === "transport"} icon={Truck} title="Transport" text="Transportleistung mit Abholort, Zielort und gewünschtem Zeitraum anfragen." onClick={() => setMode("transport")} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <ChoiceCard
+                      active={wasteGroupOpen || mode === "entsorgung" || mode === "baustoffe"}
+                      icon={Recycle}
+                      title="Abfall / Schüttgut"
+                      text="Container für die Entsorgung von Abfällen oder Lieferung von Baustoffen und Schüttgut anfragen."
+                      onClick={() => { setWasteGroupOpen(true); setMode(null) }}
+                    />
+                    <ChoiceCard
+                      active={mode === "transport"}
+                      icon={Truck}
+                      title="Transport"
+                      text="Transportleistung mit Abholort, Zielort und gewünschtem Zeitraum anfragen."
+                      onClick={() => { setWasteGroupOpen(false); setMode("transport") }}
+                    />
                   </div>
+                  {(wasteGroupOpen || mode === "entsorgung" || mode === "baustoffe") && (
+                    <div className="space-y-3 rounded-2xl border border-dashed border-seyfarth-blue/30 bg-seyfarth-blue/5 p-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-seyfarth-blue">Bitte genauer auswählen</p>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <ChoiceCard active={mode === "entsorgung"} icon={Recycle} title="Abfallarten" text="Container für Bauschutt, Sperrmüll, Holz, Grünschnitt und weitere Abfälle anfragen." onClick={() => setMode("entsorgung")} />
+                        <ChoiceCard active={mode === "baustoffe"} icon={Package} title="Schüttgut / Baustoffe" text="Schüttgut oder Recyclingmaterial liefern lassen – Preis abhängig von Menge und Lieferort." onClick={() => setMode("baustoffe")} />
+                      </div>
+                    </div>
+                  )}
                 </StepBlock>
               )}
 
@@ -587,56 +650,78 @@ export function SeyfarthConfigurator() {
                       Gute Nachricht: {zoneMatch.city} liegt in unserem Liefergebiet, Zone {zoneMatch.zone}. Den genauen Transportanteil berücksichtigen wir in Ihrer Anfrage.
                     </Notice>
                   )}
+                  {!zoneMatch && postalCode.trim().length === 5 && (
+                    <Notice tone="warning">
+                      Die angegebene Postleitzahl {postalCode.trim()} liegt außerhalb unserer Lieferzonen. Bitte nehmen Sie Kontakt mit uns auf und wir erstellen Ihnen ein individuelles Angebot.
+                    </Notice>
+                  )}
                 </StepBlock>
               )}
 
               {step === "selection" && mode === "entsorgung" && (
                 <StepBlock title="Welche Abfallart möchten Sie entsorgen?" intro="Bitte wählen Sie möglichst genau aus. Bei Asbest, Mineralwolle, teerhaltiger Dachpappe oder anderen Sonderfällen prüfen wir Ihre Anfrage vorab persönlich.">
                   <div className="grid gap-3 md:grid-cols-2">
-                    {wasteItems.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setSelectedWasteId(item.id)}
-                        aria-pressed={selectedWasteId === item.id}
-                        className={cx(
-                          "min-h-24 rounded-2xl border p-4 text-left transition hover:border-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
-                          selectedWasteId === item.id ? "border-seyfarth-blue bg-seyfarth-blue/5 shadow-sm" : "border-zinc-200 bg-white",
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div><p className="font-bold text-seyfarth-navy">{item.name}</p><p className="text-xs text-zinc-500">Abfallschlüssel: ASN {item.avv} · Entsorgung nach Gewicht: {formatEuro(item.netPrice)} netto/{item.unit}</p></div>
-                          <div className="flex items-center gap-2">
-                            {selectedWasteId === item.id && <span className="inline-flex items-center gap-1 rounded-full bg-seyfarth-blue px-2 py-1 text-xs font-bold text-white"><Check className="h-3 w-3" />Ausgewählt</span>}
+                    {wasteItems.map((item) => {
+                      const CategoryIcon = WASTE_CATEGORY_ICONS[item.category] ?? Package
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setSelectedWasteId(item.id)}
+                          aria-pressed={selectedWasteId === item.id}
+                          className={cx(
+                            "min-h-24 rounded-2xl border p-4 text-left transition hover:border-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                            selectedWasteId === item.id ? "border-seyfarth-blue bg-seyfarth-blue/5 shadow-sm" : "border-zinc-200 bg-white",
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-seyfarth-blue/10"><CategoryIcon className="h-5 w-5 text-seyfarth-blue" /></span>
+                              <div><p className="font-bold text-seyfarth-navy">{item.name}</p><p className="text-xs text-zinc-500">Abfallschlüssel: ASN {item.avv} · Entsorgung nach Gewicht: {formatEuro(item.netPrice)} netto/{item.unit}</p></div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {selectedWasteId === item.id && <span className="inline-flex items-center gap-1 rounded-full bg-seyfarth-blue px-2 py-1 text-xs font-bold text-white"><Check className="h-3 w-3" />Ausgewählt</span>}
+                            </div>
                           </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      )
+                    })}
                   </div>
-                  {selectedWaste?.notice && <Notice tone="warning">{selectedWaste.notice} Verpackung/Hinweis: {selectedWaste.packaging}.</Notice>}
+                  {selectedWaste?.notice && (
+                    <Notice tone="warning">
+                      {selectedWaste.notice}
+                      {selectedWaste.packaging ? ` Verpackung/Hinweis: ${selectedWaste.packaging}.` : ""}
+                    </Notice>
+                  )}
                 </StepBlock>
               )}
 
               {step === "selection" && mode === "baustoffe" && (
                 <StepBlock title="Welches Material benötigen Sie?" intro="Wählen Sie das Material aus. Menge und Lieferort werden als Grundlage für Ihre Anfrage berücksichtigt.">
                   <div className="grid gap-3 md:grid-cols-2">
-                    {materialItems.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setSelectedMaterialId(item.id)}
-                        aria-pressed={selectedMaterialId === item.id}
-                        className={cx(
-                          "min-h-24 rounded-2xl border p-4 text-left transition hover:border-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
-                          selectedMaterialId === item.id ? "border-seyfarth-blue bg-seyfarth-blue/5 shadow-sm" : "border-zinc-200 bg-white",
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div><p className="font-bold text-seyfarth-navy">{item.name}</p><p className="text-xs text-zinc-500">{item.specification} · {formatEuro(item.netPrice)} netto/{item.unit}</p></div>
-                          {selectedMaterialId === item.id && <span className="inline-flex items-center gap-1 rounded-full bg-seyfarth-blue px-2 py-1 text-xs font-bold text-white"><Check className="h-3 w-3" />Ausgewählt</span>}
-                        </div>
-                      </button>
-                    ))}
+                    {materialItems.map((item) => {
+                      const CategoryIcon = MATERIAL_CATEGORY_ICONS[item.category] ?? Package
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setSelectedMaterialId(item.id)}
+                          aria-pressed={selectedMaterialId === item.id}
+                          className={cx(
+                            "min-h-24 rounded-2xl border p-4 text-left transition hover:border-seyfarth-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                            selectedMaterialId === item.id ? "border-seyfarth-blue bg-seyfarth-blue/5 shadow-sm" : "border-zinc-200 bg-white",
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-seyfarth-blue/10"><CategoryIcon className="h-5 w-5 text-seyfarth-blue" /></span>
+                              <div><p className="font-bold text-seyfarth-navy">{item.name}</p><p className="text-xs text-zinc-500">{item.specification} · {formatEuro(item.netPrice)} netto/{item.unit}</p></div>
+                            </div>
+                            {selectedMaterialId === item.id && <span className="inline-flex items-center gap-1 rounded-full bg-seyfarth-blue px-2 py-1 text-xs font-bold text-white"><Check className="h-3 w-3" />Ausgewählt</span>}
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 </StepBlock>
               )}
@@ -656,9 +741,25 @@ export function SeyfarthConfigurator() {
               {step === "container" && mode !== "baustoffe" && (
                 <StepBlock title="Welche Containergröße benötigen Sie?" intro="Falls Sie unsicher sind, wählen Sie „Ich bin unsicher“. Seyfarth empfiehlt dann die passende Größe.">
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                    {containerSizes.map((size) => (
-                      <button key={size} type="button" onClick={() => setContainerSize(size)} className={cx("rounded-2xl border px-4 py-3 text-sm font-bold", containerSize === size ? "border-seyfarth-blue bg-seyfarth-blue text-white" : "border-zinc-200 bg-white text-seyfarth-navy")}>{size}</button>
-                    ))}
+                    {containerSizes.map((size) => {
+                      const kind = containerKind(size)
+                      const active = containerSize === size
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => setContainerSize(size)}
+                          className={cx(
+                            "flex flex-col items-center gap-1 rounded-2xl border px-4 py-3 text-sm font-bold",
+                            active ? "border-seyfarth-blue bg-seyfarth-blue text-white" : "border-zinc-200 bg-white text-seyfarth-navy",
+                          )}
+                        >
+                          {kind && <kind.Icon className={cx("h-5 w-5", active ? "text-seyfarth-yellow" : "text-seyfarth-blue")} />}
+                          <span>{size}</span>
+                          {kind && <span className={cx("text-[10px] font-medium normal-case", active ? "text-blue-50" : "text-zinc-400")}>{kind.label}</span>}
+                        </button>
+                      )
+                    })}
                   </div>
                 </StepBlock>
               )}
@@ -714,12 +815,20 @@ export function SeyfarthConfigurator() {
               )}
 
               {step === "dates" && (
-                <StepBlock title="Wann wünschen Sie Lieferung und Abholung?" intro="Bitte nennen Sie Ihre Wunschtermine. Wir bestätigen telefonisch oder per E-Mail, ob diese möglich sind.">
+                <StepBlock title="Wann wünschen Sie Lieferung und Abholung?" intro="Bitte nennen Sie Ihre Wunschtermine. Wir bestätigen telefonisch, per E-Mail oder SMS, ob diese möglich sind.">
+                  <Notice tone="warning">
+                    <span className="flex items-start gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" />Zwischen dem Tag der Bestellung und dem Liefertermin muss ein Werktag liegen. Rot markierte Tage sind nicht wählbar.</span>
+                  </Notice>
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Schnellauswahl Lieferdatum</p>
+                    <QuickDatePicker value={deliveryDate} onChange={setDeliveryDate} minDate={minDeliveryDate} />
+                  </div>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <Field label="Gewünschtes Lieferdatum"><input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="sey-input" /></Field>
-                    {mode === "entsorgung" && <Field label="Gewünschtes Abholdatum"><input type="date" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className="sey-input" /></Field>}
+                    <Field label="Gewünschtes Lieferdatum"><input type="date" min={minDeliveryDateIso} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="sey-input" /></Field>
+                    {mode === "entsorgung" && <Field label="Gewünschtes Abholdatum"><input type="date" min={deliveryDate || minDeliveryDateIso} value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className="sey-input" /></Field>}
                   </div>
                   <Field label="Terminflexibilität"><select value={dateFlexibility} onChange={(e) => setDateFlexibility(e.target.value)} className="sey-input"><option>telefonisch abstimmen</option><option>Datum ist fest</option><option>Ich bin flexibel</option></select></Field>
+                  <Notice tone="success">Wir bestätigen Ihren Wunschtermin in jedem Fall persönlich – telefonisch, per E-Mail oder SMS.</Notice>
                 </StepBlock>
               )}
 
@@ -790,7 +899,9 @@ export function SeyfarthConfigurator() {
                 <div className="flex items-center justify-between gap-3">
                   <Button type="button" variant="outline" onClick={goBack} disabled={step === "mode"} className="min-h-11 rounded-xl"><ArrowLeft className="mr-2 h-4 w-4" />Zurück</Button>
                   {step !== "summary" ? (
-                    <Button type="button" onClick={goNext} disabled={!canContinue()} className="min-h-11 rounded-xl bg-seyfarth-blue text-white hover:bg-seyfarth-navy">Weiter<ArrowRight className="ml-2 h-4 w-4" /></Button>
+                    <Button type="button" onClick={goNext} disabled={!canContinue()} className="min-h-11 rounded-xl bg-seyfarth-blue text-white hover:bg-seyfarth-navy">
+                      {step === "container" ? (<>In den Warenkorb legen<ShoppingCart className="ml-2 h-4 w-4" /></>) : (<>Weiter<ArrowRight className="ml-2 h-4 w-4" /></>)}
+                    </Button>
                   ) : (
                     <Button type="submit" disabled={!canContinue() || submitting} className="min-h-11 rounded-xl bg-seyfarth-blue text-white hover:bg-seyfarth-navy">{submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}Anfrage zur Prüfung senden</Button>
                   )}
@@ -864,4 +975,40 @@ function SummaryRow({ label, value }: { label: string; value?: string | null }) 
 
 function SidebarItem({ label, value }: { label: string; value?: string | null }) {
   return <div><p className="text-xs uppercase tracking-[0.16em] text-blue-300">{label}</p><p className="mt-1 font-semibold text-white">{value || "noch offen"}</p></div>
+}
+
+function QuickDatePicker({ value, onChange, minDate }: { value: string; onChange: (value: string) => void; minDate: Date }) {
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() + i)
+    return d
+  })
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1">
+      {days.map((d) => {
+        const iso = d.toISOString().slice(0, 10)
+        const disabled = d < minDate || isNonWorkingDay(d)
+        const selected = value === iso
+        return (
+          <button
+            key={iso}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(iso)}
+            aria-pressed={selected}
+            className={cx(
+              "flex min-h-14 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-2 py-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+              selected && "border-seyfarth-blue bg-seyfarth-blue text-white",
+              !selected && !disabled && "border-zinc-200 bg-white text-seyfarth-navy hover:border-seyfarth-blue",
+              disabled && "cursor-not-allowed border-red-100 bg-red-50 text-red-300",
+            )}
+          >
+            <span>{d.toLocaleDateString("de-DE", { weekday: "short" })}</span>
+            <span>{d.getDate()}.{d.getMonth() + 1}.</span>
+          </button>
+        )
+      })}
+    </div>
+  )
 }
