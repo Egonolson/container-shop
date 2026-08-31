@@ -1209,30 +1209,30 @@ function MonthCalendar({
   const canGoPrev = firstOfMonth > minMonthStart
 
   return (
-    <div className="rounded-2xl border border-zinc-200 p-4">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="w-full rounded-2xl border border-zinc-200 p-4 lg:max-w-[70%] lg:p-3">
+      <div className="mb-3 flex items-center justify-between lg:mb-2">
         <button
           type="button"
           disabled={!canGoPrev}
           onClick={() => onMonthChange(new Date(year, monthIndex - 1, 1))}
           aria-label="Vorheriger Monat"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-seyfarth-navy hover:border-seyfarth-blue disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-seyfarth-navy hover:border-seyfarth-blue disabled:cursor-not-allowed disabled:opacity-30 lg:h-6 lg:w-6"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4 lg:h-3 lg:w-3" />
         </button>
-        <p className="text-sm font-bold capitalize text-seyfarth-navy">{month.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</p>
+        <p className="text-sm font-bold capitalize text-seyfarth-navy lg:text-xs">{month.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</p>
         <button
           type="button"
           onClick={() => onMonthChange(new Date(year, monthIndex + 1, 1))}
           aria-label="Nächster Monat"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-seyfarth-navy hover:border-seyfarth-blue"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-seyfarth-navy hover:border-seyfarth-blue lg:h-6 lg:w-6"
         >
-          <ArrowRight className="h-4 w-4" />
+          <ArrowRight className="h-4 w-4 lg:h-3 lg:w-3" />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center">
+      <div className="grid grid-cols-7 gap-1 text-center lg:gap-0.5">
         {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => (
-          <span key={w} className="pb-1 text-[10px] font-bold uppercase text-zinc-400">{w}</span>
+          <span key={w} className="pb-1 text-[10px] font-bold uppercase text-zinc-400 lg:text-[8px]">{w}</span>
         ))}
         {cells.map((date, index) => {
           if (!date) return <span key={`blank-${index}`} />
@@ -1249,7 +1249,7 @@ function MonthCalendar({
               onClick={() => onSelect(iso)}
               aria-pressed={isStart || isEnd}
               className={cx(
-                "flex aspect-square items-center justify-center rounded-lg text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                "flex aspect-square items-center justify-center rounded-lg text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue lg:rounded-md lg:text-[11px]",
                 disabled && "cursor-not-allowed bg-red-50 text-red-300",
                 !disabled && !isStart && !isEnd && !inRange && "text-seyfarth-navy hover:bg-seyfarth-blue/10",
                 inRange && "bg-seyfarth-blue/15 text-seyfarth-blue",
