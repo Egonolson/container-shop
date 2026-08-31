@@ -449,12 +449,28 @@ export function SeyfarthConfigurator() {
   }
 
   const minDeliveryDate = useMemo(() => earliestDeliveryDate(), [])
-  const minDeliveryDateIso = useMemo(() => toLocalDateInputValue(minDeliveryDate), [minDeliveryDate])
-  const minPickupDate = useMemo(() => {
-    const parsedDelivery = parseLocalDateInputValue(deliveryDate)
-    return parsedDelivery && parsedDelivery > minDeliveryDate ? parsedDelivery : minDeliveryDate
-  }, [deliveryDate, minDeliveryDate])
-  const minPickupDateIso = useMemo(() => toLocalDateInputValue(minPickupDate), [minPickupDate])
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date(minDeliveryDate.getFullYear(), minDeliveryDate.getMonth(), 1))
+
+  // Single calendar drives both dates: first click sets Lieferdatum, a later
+  // click sets Abholdatum (range highlighted in between). Clicking the
+  // Lieferdatum again clears it; clicking an earlier day restarts the range.
+  // Modes without a pickup (transport/baustoffe) just overwrite Lieferdatum.
+  const handleDateSelect = (iso: string) => {
+    if (mode !== "entsorgung") {
+      setDeliveryDate(iso)
+      return
+    }
+    if (!deliveryDate || (deliveryDate && pickupDate)) {
+      setDeliveryDate(iso)
+      setPickupDate("")
+    } else if (iso > deliveryDate) {
+      setPickupDate(iso)
+    } else if (iso === deliveryDate) {
+      setDeliveryDate("")
+    } else {
+      setDeliveryDate(iso)
+    }
+  }
   const zoneMatch = useMemo(() => lookupZone(postalCode, city), [postalCode, city])
   const selectedWaste = wasteItems.find((item) => item.id === selectedWasteId)
   const selectedMaterial = materialItems.find((item) => item.id === selectedMaterialId)
@@ -977,19 +993,43 @@ export function SeyfarthConfigurator() {
                   <Notice tone="warning">
                     <span className="flex items-start gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" />Zwischen dem Tag der Bestellung und dem Liefertermin muss ein Werktag liegen. Rot markierte Tage sind nicht wählbar.</span>
                   </Notice>
-                  <div className="space-y-2">
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Schnellauswahl Lieferdatum</p>
-                    <QuickDatePicker value={deliveryDate} onChange={setDeliveryDate} minDate={minDeliveryDate} />
-                  </div>
-                  <Field label="Gewünschtes Lieferdatum"><input type="date" min={minDeliveryDateIso} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="sey-input" /></Field>
-                  {mode === "entsorgung" && (
-                    <>
-                      <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Schnellauswahl Abholdatum</p>
-                        <QuickDatePicker value={pickupDate} onChange={setPickupDate} minDate={minPickupDate} />
+                  <p className="text-sm text-zinc-600">
+                    {mode === "entsorgung"
+                      ? !deliveryDate
+                        ? "Bitte wählen Sie zuerst das Lieferdatum."
+                        : !pickupDate
+                          ? "Jetzt das Abholdatum wählen (optional bei kurzfristiger Abholung)."
+                          : "Termine ausgewählt. Sie können jederzeit neu wählen."
+                      : "Bitte wählen Sie das gewünschte Lieferdatum."}
+                  </p>
+                  <MonthCalendar
+                    month={calendarMonth}
+                    onMonthChange={setCalendarMonth}
+                    minDate={minDeliveryDate}
+                    startValue={deliveryDate}
+                    endValue={mode === "entsorgung" ? pickupDate : undefined}
+                    onSelect={handleDateSelect}
+                  />
+                  <div className={cx("grid gap-3", mode === "entsorgung" ? "grid-cols-2" : "grid-cols-1")}>
+                    <div className="rounded-2xl bg-zinc-50 p-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-400">Lieferung</p>
+                      <p className="mt-1 font-semibold text-seyfarth-navy">{deliveryDate ? parseLocalDateInputValue(deliveryDate)?.toLocaleDateString("de-DE") : "noch offen"}</p>
+                    </div>
+                    {mode === "entsorgung" && (
+                      <div className="rounded-2xl bg-zinc-50 p-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-400">Abholung</p>
+                        <p className="mt-1 font-semibold text-seyfarth-navy">{pickupDate ? parseLocalDateInputValue(pickupDate)?.toLocaleDateString("de-DE") : "noch offen"}</p>
                       </div>
-                      <Field label="Gewünschtes Abholdatum"><input type="date" min={minPickupDateIso} value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className="sey-input" /></Field>
-                    </>
+                    )}
+                  </div>
+                  {(deliveryDate || pickupDate) && (
+                    <button
+                      type="button"
+                      onClick={() => { setDeliveryDate(""); setPickupDate("") }}
+                      className="text-sm font-semibold text-seyfarth-blue underline underline-offset-4"
+                    >
+                      Termine zurücksetzen
+                    </button>
                   )}
                   <Field label="Terminflexibilität"><select value={dateFlexibility} onChange={(e) => setDateFlexibility(e.target.value)} className="sey-input"><option>telefonisch abstimmen</option><option>Datum ist fest</option><option>Ich bin flexibel</option></select></Field>
                   <Notice tone="success">Wir bestätigen Ihren Wunschtermin in jedem Fall persönlich – per E-Mail.</Notice>
@@ -1141,38 +1181,86 @@ function SidebarItem({ label, value }: { label: string; value?: string | null })
   return <div><p className="text-xs uppercase tracking-[0.16em] text-blue-300">{label}</p><p className="mt-1 font-semibold text-white">{value || "noch offen"}</p></div>
 }
 
-function QuickDatePicker({ value, onChange, minDate }: { value: string; onChange: (value: string) => void; minDate: Date }) {
-  const days = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    d.setDate(d.getDate() + i)
-    return d
-  })
+function MonthCalendar({
+  month,
+  onMonthChange,
+  minDate,
+  startValue,
+  endValue,
+  onSelect,
+}: {
+  month: Date
+  onMonthChange: (next: Date) => void
+  minDate: Date
+  startValue: string
+  endValue?: string
+  onSelect: (iso: string) => void
+}) {
+  const year = month.getFullYear()
+  const monthIndex = month.getMonth()
+  const firstOfMonth = new Date(year, monthIndex, 1)
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const leadingBlanks = (firstOfMonth.getDay() + 6) % 7 // Monday-first grid
+  const cells: Array<Date | null> = [
+    ...Array.from({ length: leadingBlanks }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => new Date(year, monthIndex, i + 1)),
+  ]
+  const minMonthStart = new Date(minDate.getFullYear(), minDate.getMonth(), 1)
+  const canGoPrev = firstOfMonth > minMonthStart
+
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      {days.map((d) => {
-        const iso = toLocalDateInputValue(d)
-        const disabled = d < minDate || isNonWorkingDay(d)
-        const selected = value === iso
-        return (
-          <button
-            key={iso}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(iso)}
-            aria-pressed={selected}
-            className={cx(
-              "flex min-h-14 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-2 py-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
-              selected && "border-seyfarth-blue bg-seyfarth-blue text-white",
-              !selected && !disabled && "border-zinc-200 bg-white text-seyfarth-navy hover:border-seyfarth-blue",
-              disabled && "cursor-not-allowed border-red-100 bg-red-50 text-red-300",
-            )}
-          >
-            <span>{d.toLocaleDateString("de-DE", { weekday: "short" })}</span>
-            <span>{d.getDate()}.{d.getMonth() + 1}.</span>
-          </button>
-        )
-      })}
+    <div className="rounded-2xl border border-zinc-200 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <button
+          type="button"
+          disabled={!canGoPrev}
+          onClick={() => onMonthChange(new Date(year, monthIndex - 1, 1))}
+          aria-label="Vorheriger Monat"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-seyfarth-navy hover:border-seyfarth-blue disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <p className="text-sm font-bold capitalize text-seyfarth-navy">{month.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</p>
+        <button
+          type="button"
+          onClick={() => onMonthChange(new Date(year, monthIndex + 1, 1))}
+          aria-label="Nächster Monat"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 text-seyfarth-navy hover:border-seyfarth-blue"
+        >
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => (
+          <span key={w} className="pb-1 text-[10px] font-bold uppercase text-zinc-400">{w}</span>
+        ))}
+        {cells.map((date, index) => {
+          if (!date) return <span key={`blank-${index}`} />
+          const iso = toLocalDateInputValue(date)
+          const disabled = date < minDate || isNonWorkingDay(date)
+          const isStart = iso === startValue
+          const isEnd = !!endValue && iso === endValue
+          const inRange = !!endValue && !!startValue && iso > startValue && iso < endValue
+          return (
+            <button
+              key={iso}
+              type="button"
+              disabled={disabled}
+              onClick={() => onSelect(iso)}
+              aria-pressed={isStart || isEnd}
+              className={cx(
+                "flex aspect-square items-center justify-center rounded-lg text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                disabled && "cursor-not-allowed bg-red-50 text-red-300",
+                !disabled && !isStart && !isEnd && !inRange && "text-seyfarth-navy hover:bg-seyfarth-blue/10",
+                inRange && "bg-seyfarth-blue/15 text-seyfarth-blue",
+                (isStart || isEnd) && "bg-seyfarth-blue text-white",
+              )}
+            >
+              {date.getDate()}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
