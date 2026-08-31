@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
+import Image from "next/image"
 import Link from "next/link"
 import {
   AlertTriangle,
@@ -10,7 +11,6 @@ import {
   Building2,
   Check,
   ClipboardCheck,
-  Container as ContainerIcon,
   Info,
   Layers,
   Leaf,
@@ -54,10 +54,13 @@ import {
   isNonWorkingDay,
   lookupZone,
   materialItems,
+  parseLocalDateInputValue,
+  toLocalDateInputValue,
   wasteItems,
 } from "@/lib/seyfarth-shop-data"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const DRAFT_STORAGE_KEY = "seyfarth-draft"
 
 type Step = "mode" | "location" | "selection" | "container" | "placement" | "dates" | "contact" | "summary"
 type EmailAccountState = "idle" | "checking" | "exists" | "new"
@@ -92,12 +95,22 @@ const MATERIAL_CATEGORY_ICONS: Record<string, React.ElementType> = {
   "Sande": Mountain,
 }
 
-function containerKind(size: string): { label: string; Icon: React.ElementType } | null {
-  if (size === "Ich bin unsicher") return null
-  if (size.includes("15") || size.includes("20") || size.includes("30") || size.includes("40")) return { label: "Abroller, groß", Icon: Truck }
-  if (size.includes("10") || size.includes("12")) return { label: "Abroller", Icon: Truck }
-  return { label: "Absetzer", Icon: ContainerIcon }
-}
+const CONTAINER_TYPE_GROUPS = [
+  {
+    key: "absetzer",
+    label: "Absetzcontainer",
+    description: "Für kurze Standzeiten direkt vor Ort – ideal für kleinere bis mittlere Mengen.",
+    photo: "/images/fleet/absetzkipper.webp",
+    sizes: ["3 m³", "5 m³", "7 m³"],
+  },
+  {
+    key: "abroller",
+    label: "Abrollcontainer",
+    description: "Für größere Mengen und Großbaustellen – wird per Abrollkipper geliefert.",
+    photo: "/images/fleet/abrollkipper.webp",
+    sizes: ["10 m³", "12 m³", "15 m³", "20 m³", "30 m³", "40 m³"],
+  },
+] as const
 
 const emptyContact = {
   customerType: "private",
@@ -156,6 +169,7 @@ export function SeyfarthConfigurator() {
   const [photoError, setPhotoError] = useState<string | null>(null)
   const successRef = useRef<HTMLElement | null>(null)
   const reorderAppliedRef = useRef(false)
+  const draftAppliedRef = useRef(false)
 
   // "Nochmal anfragen": restore a past request handed over from /konto via
   // localStorage. Runs before the profile prefill (see below) and wins on
@@ -214,6 +228,70 @@ export function SeyfarthConfigurator() {
     }))
   }, [])
 
+  // Resume-after-reload: mirrors the in-progress wizard to localStorage (see
+  // the persist effect below) and restores it here so an accidental reload
+  // doesn't wipe out everything the customer already entered. A "Nochmal
+  // anfragen" reorder is a deliberate, more recent action and wins over a
+  // possibly-stale leftover draft, so this is skipped when one applied.
+  useEffect(() => {
+    if (reorderAppliedRef.current) return
+    let raw: string | null = null
+    try {
+      raw = localStorage.getItem(DRAFT_STORAGE_KEY)
+    } catch {
+      return
+    }
+    if (!raw) return
+    let p: Record<string, unknown>
+    try {
+      p = JSON.parse(raw)
+    } catch {
+      return
+    }
+    const restoredMode = typeof p.mode === "string" ? p.mode : ""
+    if (!["entsorgung", "baustoffe", "transport"].includes(restoredMode)) return
+    draftAppliedRef.current = true
+    const str = (v: unknown, fallback = "") => (typeof v === "string" ? v : fallback)
+    const bool = (v: unknown) => v === true
+    const con = (p.contact ?? {}) as Record<string, unknown>
+
+    setMode(restoredMode as ShopMode)
+    if (typeof p.step === "string" && steps.some((item) => item.key === p.step)) setStep(p.step as Step)
+    setWasteGroupOpen(bool(p.wasteGroupOpen))
+    setPostalCode(str(p.postalCode))
+    setCity(str(p.city))
+    setSelectedWasteId(str(p.selectedWasteId))
+    setSelectedMaterialId(str(p.selectedMaterialId))
+    setTransportDescription(str(p.transportDescription))
+    if (str(p.containerSize)) setContainerSize(str(p.containerSize))
+    if (str(p.quantity)) setQuantity(str(p.quantity))
+    if (["private", "public", "unknown"].includes(str(p.placement))) setPlacement(str(p.placement) as PlacementType)
+    setPermitAccepted(bool(p.permitAccepted))
+    setSafetyAccepted(bool(p.safetyAccepted))
+    setDeliveryDate(str(p.deliveryDate))
+    setPickupDate(str(p.pickupDate))
+    if (str(p.dateFlexibility)) setDateFlexibility(str(p.dateFlexibility))
+    if (typeof p.photoPath === "string") setPhotoPath(p.photoPath)
+    const coords = (p.placementCoords ?? null) as { lat?: unknown; lng?: unknown } | null
+    if (coords && typeof coords.lat === "number" && typeof coords.lng === "number") {
+      setPlacementCoords({ lat: coords.lat, lng: coords.lng })
+    }
+    if (typeof p.constructionSiteId === "string") setSelectedSiteId(p.constructionSiteId)
+    setContact((current) => ({
+      ...current,
+      customerType: str(con.customerType, current.customerType) === "business" ? "business" : "private",
+      firstName: str(con.firstName, current.firstName),
+      lastName: str(con.lastName, current.lastName),
+      company: str(con.company, current.company),
+      email: str(con.email, current.email),
+      phone: str(con.phone, current.phone),
+      street: str(con.street, current.street),
+      postalCode: str(con.postalCode, current.postalCode),
+      city: str(con.city, current.city),
+      message: str(con.message, current.message),
+    }))
+  }, [])
+
   useEffect(() => {
     let active = true
     const supabase = createClient()
@@ -233,14 +311,15 @@ export function SeyfarthConfigurator() {
         })
       // Prefill the contact step from the saved profile so returning
       // customers don't retype their details ("schnell bestellen"). Skipped
-      // when a reorder already restored the contact block (that wins).
-      if (reorderAppliedRef.current) return
+      // when a reorder or a resumed draft already restored the contact block
+      // (those win).
+      if (reorderAppliedRef.current || draftAppliedRef.current) return
       const { data: profile } = await supabase
         .from("customer_profiles")
         .select("customer_kind, first_name, last_name, company_name, phone, street, house_number, postal_code, city")
         .eq("id", data.user.id)
         .single()
-      if (!active || !profile || reorderAppliedRef.current) return
+      if (!active || !profile || reorderAppliedRef.current || draftAppliedRef.current) return
       setContact((current) => ({
         ...current,
         customerType: profile.customer_kind === "business" ? "business" : "private",
@@ -258,6 +337,42 @@ export function SeyfarthConfigurator() {
       active = false
     }
   }, [])
+
+  // Mirrors the in-progress wizard to localStorage so the restore effect
+  // above can resume it after an accidental reload. Only meaningful once a
+  // Bereich was actually chosen — otherwise every visit would write a
+  // trivial "nothing selected" draft. `privacyAccepted` is deliberately NOT
+  // persisted: consent should be re-confirmed fresh, not silently restored.
+  useEffect(() => {
+    if (!mode) return
+    const snapshot = {
+      step,
+      mode,
+      wasteGroupOpen,
+      postalCode,
+      city,
+      selectedWasteId,
+      selectedMaterialId,
+      transportDescription,
+      containerSize,
+      quantity,
+      placement,
+      permitAccepted,
+      safetyAccepted,
+      deliveryDate,
+      pickupDate,
+      dateFlexibility,
+      contact,
+      photoPath,
+      placementCoords,
+      constructionSiteId: selectedSiteId,
+    }
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(snapshot))
+    } catch {
+      // storage unavailable (private mode / quota) — resume is best-effort
+    }
+  }, [step, mode, wasteGroupOpen, postalCode, city, selectedWasteId, selectedMaterialId, transportDescription, containerSize, quantity, placement, permitAccepted, safetyAccepted, deliveryDate, pickupDate, dateFlexibility, contact, photoPath, placementCoords, selectedSiteId])
 
   const selectSite = (site: ConstructionSite) => {
     setSelectedSiteId(site.id)
@@ -280,7 +395,6 @@ export function SeyfarthConfigurator() {
   }
 
   const handlePhotoUpload = async (file: File) => {
-    if (!loggedInUserId) return
     setPhotoError(null)
     if (!file.type.startsWith("image/")) {
       setPhotoError("Bitte laden Sie eine Bilddatei hoch.")
@@ -292,12 +406,23 @@ export function SeyfarthConfigurator() {
     }
     setPhotoUploading(true)
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg"
-      // Path must start with the user id — the storage RLS keys on that folder.
-      const path = `${loggedInUserId}/${crypto.randomUUID()}.${ext}`
-      const { error: uploadError } = await createClient().storage.from("placement-photos").upload(path, file, { upsert: false })
-      if (uploadError) throw uploadError
-      setPhotoPath(path)
+      if (loggedInUserId) {
+        const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg"
+        // Path must start with the user id — the storage RLS keys on that folder.
+        const path = `${loggedInUserId}/${crypto.randomUUID()}.${ext}`
+        const { error: uploadError } = await createClient().storage.from("placement-photos").upload(path, file, { upsert: false })
+        if (uploadError) throw uploadError
+        setPhotoPath(path)
+      } else {
+        // Guests have no session to key Storage RLS on — the upload goes
+        // through a server route that writes via the service role instead.
+        const formData = new FormData()
+        formData.append("file", file)
+        const response = await fetch("/api/shop-requests/photo", { method: "POST", body: formData })
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok || !data?.path) throw new Error(data?.message || "upload failed")
+        setPhotoPath(data.path)
+      }
     } catch {
       setPhotoError("Das Bild konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.")
     } finally {
@@ -324,7 +449,12 @@ export function SeyfarthConfigurator() {
   }
 
   const minDeliveryDate = useMemo(() => earliestDeliveryDate(), [])
-  const minDeliveryDateIso = useMemo(() => minDeliveryDate.toISOString().slice(0, 10), [minDeliveryDate])
+  const minDeliveryDateIso = useMemo(() => toLocalDateInputValue(minDeliveryDate), [minDeliveryDate])
+  const minPickupDate = useMemo(() => {
+    const parsedDelivery = parseLocalDateInputValue(deliveryDate)
+    return parsedDelivery && parsedDelivery > minDeliveryDate ? parsedDelivery : minDeliveryDate
+  }, [deliveryDate, minDeliveryDate])
+  const minPickupDateIso = useMemo(() => toLocalDateInputValue(minPickupDate), [minPickupDate])
   const zoneMatch = useMemo(() => lookupZone(postalCode, city), [postalCode, city])
   const selectedWaste = wasteItems.find((item) => item.id === selectedWasteId)
   const selectedMaterial = materialItems.find((item) => item.id === selectedMaterialId)
@@ -500,6 +630,7 @@ export function SeyfarthConfigurator() {
           intent: "inquiry",
         }),
       )
+      localStorage.removeItem(DRAFT_STORAGE_KEY)
       setSubmittedId(id)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Anfrage konnte nicht gesendet werden.")
@@ -740,27 +871,60 @@ export function SeyfarthConfigurator() {
 
               {step === "container" && mode !== "baustoffe" && (
                 <StepBlock title="Welche Containergröße benötigen Sie?" intro="Falls Sie unsicher sind, wählen Sie „Ich bin unsicher“. Seyfarth empfiehlt dann die passende Größe.">
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                    {containerSizes.map((size) => {
-                      const kind = containerKind(size)
-                      const active = containerSize === size
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {CONTAINER_TYPE_GROUPS.map((group) => {
+                      const groupActive = (group.sizes as readonly string[]).includes(containerSize)
                       return (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => setContainerSize(size)}
+                        <div
+                          key={group.key}
                           className={cx(
-                            "flex flex-col items-center gap-1 rounded-2xl border px-4 py-3 text-sm font-bold",
-                            active ? "border-seyfarth-blue bg-seyfarth-blue text-white" : "border-zinc-200 bg-white text-seyfarth-navy",
+                            "overflow-hidden rounded-3xl border transition",
+                            groupActive ? "border-seyfarth-blue shadow-lg" : "border-zinc-200",
                           )}
                         >
-                          {kind && <kind.Icon className={cx("h-5 w-5", active ? "text-seyfarth-yellow" : "text-seyfarth-blue")} />}
-                          <span>{size}</span>
-                          {kind && <span className={cx("text-[10px] font-medium normal-case", active ? "text-blue-50" : "text-zinc-400")}>{kind.label}</span>}
-                        </button>
+                          <div className="relative h-40 w-full bg-gradient-to-b from-seyfarth-blue/10 to-white">
+                            <Image src={group.photo} alt={group.label} fill sizes="(min-width: 768px) 400px, 100vw" className="object-contain p-6" />
+                          </div>
+                          <div className="space-y-3 p-4">
+                            <div>
+                              <p className="font-bold text-seyfarth-navy">{group.label}</p>
+                              <p className="text-xs text-zinc-500">{group.description}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {group.sizes.map((size) => {
+                                const active = containerSize === size
+                                return (
+                                  <button
+                                    key={size}
+                                    type="button"
+                                    onClick={() => setContainerSize(size)}
+                                    aria-pressed={active}
+                                    className={cx(
+                                      "rounded-xl border px-3 py-2 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                                      active ? "border-seyfarth-blue bg-seyfarth-blue text-white" : "border-zinc-200 bg-white text-seyfarth-navy hover:border-seyfarth-blue",
+                                    )}
+                                  >
+                                    {size}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
                       )
                     })}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setContainerSize("Ich bin unsicher")}
+                    aria-pressed={containerSize === "Ich bin unsicher"}
+                    className={cx(
+                      "w-full rounded-2xl border px-4 py-3 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seyfarth-blue",
+                      containerSize === "Ich bin unsicher" ? "border-seyfarth-blue bg-seyfarth-blue text-white" : "border-zinc-200 bg-white text-seyfarth-navy hover:border-seyfarth-blue",
+                    )}
+                  >
+                    Ich bin unsicher – Seyfarth berät mich
+                  </button>
                 </StepBlock>
               )}
 
@@ -787,35 +951,29 @@ export function SeyfarthConfigurator() {
                         </p>
                       )}
 
-                      {loggedInEmail ? (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-seyfarth-navy">Foto vom Stellplatz (optional)</p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            disabled={photoUploading}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) handlePhotoUpload(file)
-                            }}
-                            className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-seyfarth-blue/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-seyfarth-blue"
-                          />
-                          {photoUploading && <p className="text-xs text-zinc-500">Bild wird hochgeladen …</p>}
-                          {photoPath && !photoUploading && <p className="text-xs text-emerald-600">Foto hochgeladen.</p>}
-                          {photoError && <p className="text-xs text-destructive">{photoError}</p>}
-                        </div>
-                      ) : REGISTRATION_ENABLED ? (
-                        <p className="text-xs text-zinc-500">
-                          Mit einem Kundenkonto können Sie zusätzlich ein Foto des Stellplatzes hochladen.
-                        </p>
-                      ) : null}
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-seyfarth-navy">Foto vom Stellplatz (optional)</p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={photoUploading}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) handlePhotoUpload(file)
+                          }}
+                          className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-seyfarth-blue/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-seyfarth-blue"
+                        />
+                        {photoUploading && <p className="text-xs text-zinc-500">Bild wird hochgeladen …</p>}
+                        {photoPath && !photoUploading && <p className="text-xs text-emerald-600">Foto hochgeladen.</p>}
+                        {photoError && <p className="text-xs text-destructive">{photoError}</p>}
+                      </div>
                     </div>
                   )}
                 </StepBlock>
               )}
 
               {step === "dates" && (
-                <StepBlock title="Wann wünschen Sie Lieferung und Abholung?" intro="Bitte nennen Sie Ihre Wunschtermine. Wir bestätigen telefonisch, per E-Mail oder SMS, ob diese möglich sind.">
+                <StepBlock title="Wann wünschen Sie Lieferung und Abholung?" intro="Bitte nennen Sie Ihre Wunschtermine. Wir bestätigen per E-Mail, ob diese möglich sind.">
                   <Notice tone="warning">
                     <span className="flex items-start gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" />Zwischen dem Tag der Bestellung und dem Liefertermin muss ein Werktag liegen. Rot markierte Tage sind nicht wählbar.</span>
                   </Notice>
@@ -823,12 +981,18 @@ export function SeyfarthConfigurator() {
                     <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Schnellauswahl Lieferdatum</p>
                     <QuickDatePicker value={deliveryDate} onChange={setDeliveryDate} minDate={minDeliveryDate} />
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Field label="Gewünschtes Lieferdatum"><input type="date" min={minDeliveryDateIso} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="sey-input" /></Field>
-                    {mode === "entsorgung" && <Field label="Gewünschtes Abholdatum"><input type="date" min={deliveryDate || minDeliveryDateIso} value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className="sey-input" /></Field>}
-                  </div>
+                  <Field label="Gewünschtes Lieferdatum"><input type="date" min={minDeliveryDateIso} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="sey-input" /></Field>
+                  {mode === "entsorgung" && (
+                    <>
+                      <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Schnellauswahl Abholdatum</p>
+                        <QuickDatePicker value={pickupDate} onChange={setPickupDate} minDate={minPickupDate} />
+                      </div>
+                      <Field label="Gewünschtes Abholdatum"><input type="date" min={minPickupDateIso} value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className="sey-input" /></Field>
+                    </>
+                  )}
                   <Field label="Terminflexibilität"><select value={dateFlexibility} onChange={(e) => setDateFlexibility(e.target.value)} className="sey-input"><option>telefonisch abstimmen</option><option>Datum ist fest</option><option>Ich bin flexibel</option></select></Field>
-                  <Notice tone="success">Wir bestätigen Ihren Wunschtermin in jedem Fall persönlich – telefonisch, per E-Mail oder SMS.</Notice>
+                  <Notice tone="success">Wir bestätigen Ihren Wunschtermin in jedem Fall persönlich – per E-Mail.</Notice>
                 </StepBlock>
               )}
 
@@ -987,7 +1151,7 @@ function QuickDatePicker({ value, onChange, minDate }: { value: string; onChange
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
       {days.map((d) => {
-        const iso = d.toISOString().slice(0, 10)
+        const iso = toLocalDateInputValue(d)
         const disabled = d < minDate || isNonWorkingDay(d)
         const selected = value === iso
         return (
