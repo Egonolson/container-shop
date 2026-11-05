@@ -9,3 +9,5 @@ Mailer: Transporthost/Port/secure/auth unverändert aus konfigurierten Daten abg
 Finaler npm audit erst nach ausdrücklich erteilter Freigabe für Paketnamen, Versionen und Abhängigkeitsmetadaten an npm ausgeführt. Nodemailer ist nicht mehr betroffen. Audit bleibt mit sechs dev-only-Funden rot: high shadcn/zod; moderate @ts-morph/common, minimatch, ts-morph; low deepmerge. Kein ungeprüfter npm-Downgrade auf shadcn1.0.0. Kein zweiter Auditlauf oder indirekter Ausweichweg.
 
 Keine Server, Datenbank, echten Maildienste, Secrets, Docker, Pushes oder Deployments verwendet. Unabhängiges Sicherheits-/Änderungsreview bleibt bei der auftraggebenden Hauptsession.
+
+Nachtrag: Die sechs historisch oben genannten Entwicklungsfunde sind durch die separat dokumentierte CSS-Ejection geschlossen; danach vollständiger und Produktionsaudit jeweils 0 Befunde. Siehe `../2026-11-05-shadcn-css-ejection/SECURITY.md`.

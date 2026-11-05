@@ -47,3 +47,5 @@ Private lokale Belege: outputs/rollout/remediation/Container-Seyfarth/ unter der
 ## Offen
 
 Die sechs verbleibenden shadcn-Entwicklungsabhängigkeitsfunde benötigen einen gesondert geprüften Updateweg. Kein automatischer Downgrade/Override. Unabhängiges Review, QA-Rollout und echte SMTP-/TLS-Handshakes offen. Keine Push-/PR-/Merge-/Deploymentaktion. Node meldet bestehende Modulformat-/register-Abkündigungswarnungen; Tests und Build sind dennoch grün.
+
+Nachtrag: Die sechs oben historisch erfassten Entwicklungsfunde wurden im getrennten Folgeauftrag `../2026-11-05-shadcn-css-ejection/AUFGABE.md` geschlossen. Finaler vollständiger und Produktionsaudit jeweils 0 Befunde; aktuelle Suite26/26, Typecheck und Build grün. Der Nodemailer-Commit cff7f06 bleibt als separater Fix erhalten.
