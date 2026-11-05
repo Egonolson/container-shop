@@ -1,0 +1,54 @@
+{
+  "source": "shadcn@3.8.5/dist/tailwind.css",
+  "capturedBeforeEjection": true,
+  "cases": [
+    {
+      "candidate": "data-open:opacity-50",
+      "sha256": "c9dccb611c616a7cd79782edf87740f7030df0ab9ee43bc6f97a6c47e2a792e4"
+    },
+    {
+      "candidate": "data-closed:opacity-50",
+      "sha256": "e27f56b623a9fc20412f1acec3bd5ebd03070bff9a0dc6a1409bd17d0579b1fa"
+    },
+    {
+      "candidate": "data-checked:opacity-50",
+      "sha256": "c34b55e90833ad5b8be210e6c1467d7af095a0dbe67625aa33c3c97796cce97e"
+    },
+    {
+      "candidate": "data-unchecked:opacity-50",
+      "sha256": "a02ca66658e945d3297b3e31b3b494cb08f5de84f9f1e9e9b108cf7efd8cf078"
+    },
+    {
+      "candidate": "data-selected:opacity-50",
+      "sha256": "ec3559656576343e40a550ce83f898fc91c85b78a7c62ec02a5151ce803f22fd"
+    },
+    {
+      "candidate": "data-disabled:opacity-50",
+      "sha256": "81331cd1c749e1c626dda491c39b727967093fc062c4825bf5817e20880834f8"
+    },
+    {
+      "candidate": "data-active:opacity-50",
+      "sha256": "0b1766e2a8e0e50769b26a0ebaddfda639d4edcc8a004824478334c92baa78d1"
+    },
+    {
+      "candidate": "data-horizontal:opacity-50",
+      "sha256": "e1ed440cd9f8629c869cede2a941e8831e9d733870473b12ccfb1d55af7df49a"
+    },
+    {
+      "candidate": "data-vertical:opacity-50",
+      "sha256": "3599c6904520d4f9bf9bb280f32db959e0f77e482acdb136d43a27e16d85abe5"
+    },
+    {
+      "candidate": "no-scrollbar",
+      "sha256": "07d81fdfa373d83631765f2abd29fce8c3597223385e280e0af756ec8b2fe1fe"
+    },
+    {
+      "candidate": "animate-accordion-down",
+      "sha256": "5b10579d77e37df9634642164e99946da6923b4198dd53e16b7eacf74c8ed267"
+    },
+    {
+      "candidate": "animate-accordion-up",
+      "sha256": "999a2be12904bc4b55a3de0dc6f78ebe2d31fe127a1d72dd62534894e2c40b0c"
+    }
+  ]
+}
