@@ -1,0 +1,6 @@
+# Apply together with the existing, resolved runtime Compose configuration.
+# This overlay changes only the storefront image; it never starts dependencies.
+services:
+  seyfarth-storefront:
+    image: ${SEYFARTH_RELEASE_IMAGE:?Set the verified release or rollback image}
+    pull_policy: never
